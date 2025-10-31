@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Mill Charge Calculator</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Additional custom styles for ball charge calculator */
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .good { color: var(--success-color); }
+        .fair { color: var(--warning-color); }
+        .poor { color: var(--danger-color); }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .recommendations {
+            background: #fff9e6;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .ai-analysis {
+            background: #f0f8ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* Splash Screen Styles */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .splash-screen .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Print Header and Footer */
+        .print-header {
+            display: none;
+        }
+        
+        .print-footer {
+            display: none;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.75in;
+            }
+            
+            .print-header, .print-footer {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                background: white;
+                z-index: 100;
+                padding: 10px 0.75in;
+            }
+            
+            .print-header {
+                top: 0;
+                height: 70px;
+                border-bottom: 2px solid var(--primary-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10pt;
+            }
+            
+            .print-footer {
+                bottom: 0;
+                height: 30px;
+                border-top: 1px solid var(--border-color);
+                text-align: center;
+                font-size: 9pt;
+                color: var(--text-secondary);
+                line-height: 30px;
+            }
+            
+            body {
+                padding-top: 80px;
+                padding-bottom: 40px;
+                font-size: 12pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                page-break-inside: avoid;
+            }
+            
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Custom styles for this calculator */
+        .developer-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .developer-info h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .developer-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .api-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div>
+            <h1 data-en="Ball Mill Charge Calculator" data-ar="حاسبة شحن الكرات لطواحين الأسمنت">Ball Mill Charge Calculator</h1>
+            <p data-en="Developed by: Mr. Fadi M. Darwesh" data-ar="تطوير: السيد فادي م. درويش">Developed by: Mr. Fadi M. Darwesh</p>
+            <p data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</p>
+            <p data-en="asrar.cement@gmail.com" data-ar="asrar.cement@gmail.com">asrar.cement@gmail.com</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <div>
+            <strong data-en="Ball Mill Charge Calculator" data-ar="حاسبة شحن الكرات لطواحين الأسمنت">Ball Mill Charge Calculator</strong>
+        </div>
+        <div>
+            <strong data-en="Confidential Report" data-ar="تقرير سري">Confidential Report</strong>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer">
+        <span data-en="Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com" data-ar="السيد فادي م. درويش - أخصائي ضمان الجودة والبحوث والتطوير - asrar.cement@gmail.com">Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com</span>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header no-print">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 data-en="Ball Mill Charge Calculator" data-ar="حاسبة شحن الكرات لطواحين الأسمنت">Ball Mill Charge Calculator</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="language-switch">
+                        <button class="lang-btn active" id="lang-en">English</button>
+                        <button class="lang-btn" id="lang-ar">العربية</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Back to Home Button -->
+        <a href="index.html" class="back-btn" style="position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <i class="fas fa-arrow-right"></i>
+            العودة للرئيسية
+        </a>
+
+        <div class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 data-en="Advanced Ball Charge Optimization Calculator" data-ar="حاسبة تحسين شحن الكرات المتقدمة">Advanced Ball Charge Optimization Calculator</h2>
+                    <p data-en="Comprehensive analysis tool for optimal ball mill charge calculation using industry-standard methods and real-time performance optimization" data-ar="أطركة شاملة لحساب شحن الطاحونة المثالي باستخدام الطرق القياسية للصناعة والتحسين في الوقت الفعلي">Comprehensive analysis tool for optimal ball mill charge calculation using industry-standard methods and real-time performance optimization</p>
+                </div>
+            </section>
+
+            <!-- Company & Report Information -->
+            <div class="card">
+                <h2 class="section-title" data-en="Company & Report Information" data-ar="معلومات الشركة والتقرير">Company & Report Information</h2>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="company-name" data-en="Company Name" data-ar="اسم الشركة">Company Name</label>
+                        <input type="text" id="company-name" placeholder="Enter company name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-date" data-en="Report Date" data-ar="تاريخ التقرير">Report Date</label>
+                        <input type="date" id="report-date">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-preparer" data-en="Report Prepared By" data-ar="معد التقرير">Report Prepared By</label>
+                        <input type="text" id="report-preparer" placeholder="Enter preparer name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-position" data-en="Preparer Position" data-ar="منصب معد التقرير">Preparer Position</label>
+                        <input type="text" id="report-position" placeholder="Enter preparer position">
+                    </div>
+                    <div class="input-group">
+                        <label for="mill-id" data-en="Mill ID/Name" data-ar="معرف/اسم المطحنة">Mill ID/Name</label>
+                        <input type="text" id="mill-id" placeholder="e.g., Mill #1, Raw Mill">
+                    </div>
+                    <div class="input-group">
+                        <label for="production-date" data-en="Production Date" data-ar="تاريخ الإنتاج">Production Date</label>
+                        <input type="date" id="production-date">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ball Charge Parameters -->
+            <div class="card">
+                <h2 class="section-title" data-en="Ball Charge Parameters" data-ar="معاملات شحن الكرات">Ball Charge Parameters</h2>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="mill-diameter" data-en="Mill Diameter (m)" data-ar="قطر الطاحونة (متر)">Mill Diameter (m)</label>
+                        <input type="number" id="mill-diameter" placeholder="Enter mill diameter" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="mill-length" data-en="Mill Length (m)" data-ar="طول الطاحونة (متر)">Mill Length (m)</label>
+                        <input type="number" id="mill-length" placeholder="Enter mill length" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="mill-speed" data-en="Mill Speed (RPM)" data-ar="سرعة الطاحونة (دورة/دقيقة)">Mill Speed (RPM)</label>
+                        <input type="number" id="mill-speed" placeholder="Enter mill speed" step="0.1" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="work-index" data-en="Material Work Index" data-ar="معامل عمل المادة">Material Work Index</label>
+                        <input type="number" id="work-index" placeholder="Enter Bond work index" step="0.1" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="ball-density" data-en="Ball Density (kg/m³)" data-ar="كثافة الكرات (كغ/م³)">Ball Density (kg/m³)</label>
+                        <input type="number" id="ball-density" placeholder="Enter ball density" step="1" min="0" value="7800">
+                    </div>
+                    <div class="input-group">
+                        <label for="charge-level" data-en="Charge Level (%)" data-ar="مستوى الشحن (%)">Charge Level (%)</label>
+                        <input type="number" id="charge-level" placeholder="Enter charge level" step="0.1" min="0" max="100" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Settings -->
+            <div class="card">
+                <h2 class="section-title" data-en="Target Settings" data-ar="الإعدادات المستهدفة">Target Settings</h2>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;" data-en="Set your factory's specific targets for optimal ball charge performance." data-ar="حدد أهداف مصنعك المحددة لأداء شحن الكرات الأمثل.">Set your factory's specific targets for optimal ball charge performance.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Parameter" data-ar="المعامل">Parameter</th>
+                            <th data-en="Target Value" data-ar="القيمة المستهدفة">Target Value</th>
+                            <th data-en="Range" data-ar="المجال">Range</th>
+                            <th data-en="Current Value" data-ar="القيمة الحالية">Current Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-en="Optimal Charge Level (%)" data-ar="مستوى الشحن المثالي (%)">Optimal Charge Level (%)</td>
+                            <td><input type="number" id="target-charge-level" value="30" step="0.1"></td>
+                            <td><span data-en="25-35%" data-ar="25-35%">25-35%</span></td>
+                            <td id="current-charge-level">-</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Target Grinding Efficiency (%)" data-ar="كفاءة الطحن المستهدفة (%)">Target Grinding Efficiency (%)</td>
+                            <td><input type="number" id="target-grinding-eff" value="85" step="1"></td>
+                            <td><span data-en="80-90%" data-ar="80-90%">80-90%</span></td>
+                            <td id="current-grinding-eff">-</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Ball Size Distribution Target" data-ar="توزيع أحجام الكرات المستهدف">Ball Size Distribution Target</td>
+                            <td><input type="text" id="target-ball-distribution" value="80mm:40%, 60mm:30%, 40mm:20%, 20mm:10%"></td>
+                            <td><span data-en="Optimized" data-ar="محسن">Optimized</span></td>
+                            <td id="current-ball-distribution">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Ball Size Distribution Data -->
+            <div class="card">
+                <h2 class="section-title" data-en="Ball Size Distribution" data-ar="توزيع أحجام الكرات">Ball Size Distribution</h2>
+                <p style="text-align: center; margin: 15px 0; color: var(--text-secondary);" data-en="Enter ball size and weight percentage for each size fraction:" data-ar="أدخل حجم الكرات والنسبة المئوية للوزن لكل جزء:">Enter ball size and weight percentage for each size fraction:</p>
+                
+                <table class="data-table" id="ball-size-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Ball Size (mm)" data-ar="حجم الكرة (مليمتر)">Ball Size (mm)</th>
+                            <th data-en="Weight (%)" data-ar="الوزن (%)">Weight (%)</th>
+                            <th data-en="Number of Balls" data-ar="عدد الكرات">Number of Balls</th>
+                            <th data-en="Actions" data-ar="الإجراءات">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ball-size-table-body">
+                    </tbody>
+                </table>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" id="add-ball-size-row" data-en="Add Ball Size" data-ar="إضافة حجم كرة">Add Ball Size</button>
+                    <button class="btn btn-secondary" id="add-default-ball-sizes" data-en="Add Standard Sizes" data-ar="إضافة الأحجام القياسية">Add Standard Sizes</button>
+                    <button class="btn btn-warning" id="load-ball-example" data-en="Load Example Data" data-ar="تحميل بيانات مثال">Load Example Data</button>
+                    <button class="btn btn-success" id="save-ball-data" data-en="Save Data" data-ar="حفظ البيانات">Save Data</button>
+                    <button class="btn btn-secondary" id="load-ball-data" data-ar="تحميل البيانات" data-en="Load Data">Load Data</button>
+                    <button class="btn btn-lg btn-primary" id="calculate-ball-charge-btn" data-en="Calculate Ball Charge" data-ar="حساب شحن الكرات">Calculate Ball Charge</button>
+                </div>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="card">
+                <h2 class="section-title" data-en="Additional Notes" data-ar="ملاحظات إضافية">Additional Notes</h2>
+                <div class="input-group">
+                    <label for="additional-notes" data-en="Add your notes and observations here:" data-ar="أضف ملاحظاتك وتوصياتك هنا:">Add your notes and observations here:</label>
+                    <textarea id="additional-notes" rows="4" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-family: var(--font-arabic);" placeholder="Enter any additional notes, observations, or recommendations..."></textarea>
+                </div>
+                <small style="color: var(--text-secondary);" data-en="These notes will be included in the final report" data-ar="هذه الملاحظات ستظهر في التقرير النهائي">These notes will be included in the final report</small>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="results-section">
+                <div class="card">
+                    <h2 class="section-title" data-en="Ball Charge Calculation Results" data-ar="نتائج حساب شحن الكرات">Ball Charge Calculation Results</h2>
+                    
+                    <div class="grid-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <!-- KPI Cards -->
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Charge Volume" data-ar="حجم الشحن">Charge Volume</div>
+                            <div class="kpi-value" id="charge-volume-value">-</div>
+                            <div class="kpi-label" data-en="m³" data-ar="متر مكعب">m³</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Total volume occupied by the ball charge in the mill" data-ar="إجمالي الحجم الذي تشغله شحنات الكرات في الطاحونة">Total volume occupied by the ball charge in the mill</div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Charge Weight" data-ar="وزن الشحن">Charge Weight</div>
+                            <div class="kpi-value" id="charge-weight-value">-</div>
+                            <div class="kpi-label" data-en="tons" data-ar="طن">tons</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Total weight of balls required for optimal grinding" data-ar="إجمالي وزن الكرات المطلوب للطحن الأمثل">Total weight of balls required for optimal grinding</div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Filling Ratio" data-ar="نسبة التعبئة">Filling Ratio</div>
+                            <div class="kpi-value" id="filling-ratio-value">-</div>
+                            <div class="kpi-label" id="filling-ratio-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Percentage of mill volume filled with grinding media" data-ar="النسبة المئوية من حجم الطاحونة المملوءة بوسط الطحن">Percentage of mill volume filled with grinding media</div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Grinding Efficiency" data-ar="كفاءة الطحن">Grinding Efficiency</div>
+                            <div class="kpi-value" id="grinding-eff-value">-</div>
+                            <div class="kpi-label" id="grinding-eff-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Estimated grinding efficiency based on ball charge optimization" data-ar="كفاءة الطحن المقدرة بناءً على تحسين شحن الكرات">Estimated grinding efficiency based on ball charge optimization</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="chart-container">
+                        <canvas id="ball-distribution-chart"></canvas>
+                    </div>
+                    
+                    <!-- Detailed Calculations -->
+                    <div class="report-section">
+                        <h3 class="section-heading" data-en="Detailed Calculations" data-ar="الحسابات التفصيلية">Detailed Calculations</h3>
+                        <div id="detailed-calculations"></div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="recommendations">
+                        <h3 class="section-heading" data-en="Recommendations" data-ar="التوصيات">Recommendations</h3>
+                        <div id="recommendations-content"></div>
+                    </div>
+                    
+                    <div class="button-group no-print">
+                        <button class="btn btn-success" id="print-ball-report" data-en="Print Report" data-ar="طباعة التقرير">Print Report</button>
+                        <button class="btn btn-warning" id="export-ball-pdf" data-en="Export as PDF" data-ar="تصدير كـ PDF">Export as PDF</button>
+                        <button class="btn btn-secondary" id="new-ball-analysis" data-en="New Analysis" data-ar="تحليل جديد">New Analysis</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="developer-info no-print">
+                <h3 data-en="System Developer" data-ar="مطور النظام">System Developer</h3>
+                <p><strong data-en="Mr. Fadi M. Darwesh" data-ar="السيد فادي م. درويش">Mr. Fadi M. Darwesh</strong></p>
+                <p data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</p>
+                <p>asrar.cement@gmail.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer no-print">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 data-en="Ball Mill Charge Calculator" data-ar="حاسبة شحن الكرات لطواحين الأسمنت">Ball Mill Charge Calculator</h4>
+                    <p data-en="Advanced calculation tools for optimal ball mill charge optimization" data-ar="أدوات حساب متقدمة لتحسين شحن الطاحونة الأمثل">Advanced calculation tools for optimal ball mill charge optimization</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Developer" data-ar="المطور">Developer</h4>
+                    <ul>
+                        <li>Mr. Fadi M. Darwesh</li>
+                        <li data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</li>
+                        <li>asrar.cement@gmail.com</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Features" data-ar="المميزات">Features</h4>
+                    <ul>
+                        <li data-en="Ball Size Distribution Analysis" data-ar="تحليل توزيع أحجام الكرات">Ball Size Distribution Analysis</li>
+                        <li data-en="Charge Volume Calculations" data-ar="حسابات حجم الشحن">Charge Volume Calculations</li>
+                        <li data-en="Efficiency Optimization" data-ar="تحسين الكفاءة">Efficiency Optimization</li>
+                        <li data-en="Professional Reports" data-ar="تقارير احترافية">Professional Reports</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--gray-700);">
+                <p data-en="© 2025 Ball Mill Charge Calculator System. All rights reserved." data-ar="© 2025 نظام حاسبة شحن الكرات للطواحين. جميع الحقوق محفوظة.">© 2025 Ball Mill Charge Calculator System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-cog"></i>
+            <p data-en="Calculating..." data-ar="جاري الحساب...">Calculating...</p>
+        </div>
+    </div>
+
+    <script>
+        // Language switching functionality
+        document.getElementById('lang-en').addEventListener('click', function() {
+            setLanguage('en');
+        });
+        
+        document.getElementById('lang-ar').addEventListener('click', function() {
+            setLanguage('ar');
+        });
+        
+        function setLanguage(lang) {
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update text content based on data attributes
+            document.querySelectorAll('[data-en]').forEach(element => {
+                if (lang === 'en') {
+                    element.textContent = element.getAttribute('data-en');
+                } else {
+                    element.textContent = element.getAttribute('data-ar');
+                }
+            });
+            
+            // Update placeholders
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
+                const enText = element.getAttribute('data-en-placeholder');
+                const arText = element.getAttribute('data-ar-placeholder');
+                
+                if (enText && arText) {
+                    element.placeholder = lang === 'en' ? enText : arText;
+                }
+            });
+            
+            // Update direction
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+        
+        // Initialize with English
+        setLanguage('en');
+        
+        // Initialize splash screen
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 2000);
+            
+            // Set current dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('report-date').value = today;
+            document.getElementById('production-date').value = today;
+            
+            // Initialize with default ball sizes
+            addBallSizeRow(80);
+            addBallSizeRow(60);
+            addBallSizeRow(40);
+            addBallSizeRow(20);
+            
+            // Handle overflow-x on content load
+            function handleOverflow() {
+                if (document.body.scrollWidth > window.innerWidth) {
+                    document.body.style.overflow-x = 'auto';
+                } else {
+                    document.body.style.overflow-x = 'hidden';
+                }
+            }
+            
+            window.addEventListener('resize', handleOverflow);
+            handleOverflow();
+        });
+
+        function addBallSizeRow(defaultSize = '', defaultWeight = '') {
+            const tableBody = document.getElementById('ball-size-table-body');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td>
+                    <input type="number" step="0.1" min="0.1" class="ball-size-input" value="${defaultSize}" placeholder="Enter size">
+                </td>
+                <td>
+                    <input type="number" step="0.1" min="0" max="100" class="ball-weight-input" value="${defaultWeight}" placeholder="0-100">
+                </td>
+                <td class="ball-count-cell">-</td>
+                <td>
+                    <button class="btn btn-danger remove-ball-row" data-en="Remove" data-ar="إزالة">Remove</button>
+                </td>
+            `;
+            
+            tableBody.appendChild(newRow);
+            
+            // Update ball count when size or weight changes
+            const sizeInput = newRow.querySelector('.ball-size-input');
+            const weightInput = newRow.querySelector('.ball-weight-input');
+            
+            function updateBallCount() {
+                updateBallCounts();
+            }
+            
+            sizeInput.addEventListener('change', updateBallCount);
+            weightInput.addEventListener('change', updateBallCount);
+            
+            newRow.querySelector('.remove-ball-row').addEventListener('click', function() {
+                if (tableBody.children.length > 1) {
+                    tableBody.removeChild(newRow);
+                    updateBallCounts();
+                } else {
+                    alert('You must have at least one ball size!');
+                }
+            });
+        }
+
+        function updateBallCounts() {
+            const ballDensity = parseFloat(document.getElementById('ball-density').value) || 7800;
+            const millDiameter = parseFloat(document.getElementById('mill-diameter').value) || 0;
+            const millLength = parseFloat(document.getElementById('mill-length').value) || 0;
+            const chargeLevel = parseFloat(document.getElementById('charge-level').value) || 0;
+            
+            if (millDiameter > 0 && millLength > 0 && chargeLevel > 0) {
+                const millVolume = Math.PI * Math.pow(millDiameter / 2, 2) * millLength;
+                const chargeVolume = millVolume * (chargeLevel / 100);
+                const chargeWeight = chargeVolume * ballDensity / 1000; // Convert to tons
+                
+                const rows = document.querySelectorAll('#ball-size-table-body tr');
+                let totalWeightPercent = 0;
+                
+                rows.forEach(row => {
+                    const sizeInput = row.querySelector('.ball-size-input');
+                    const weightInput = row.querySelector('.ball-weight-input');
+                    const countCell = row.querySelector('.ball-count-cell');
+                    
+                    const size = parseFloat(sizeInput.value);
+                    const weightPercent = parseFloat(weightInput.value);
+                    
+                    if (!isNaN(size) && size > 0 && !isNaN(weightPercent) && weightPercent > 0) {
+                        totalWeightPercent += weightPercent;
+                        // Calculate number of balls for this size
+                        const ballVolume = (4/3) * Math.PI * Math.pow(size / 2000, 3); // Convert mm to meters
+                        const weightPerBall = ballVolume * ballDensity;
+                        const ballsForThisSize = (chargeWeight * 1000 * (weightPercent / 100)) / weightPerBall;
+                        countCell.textContent = Math.round(ballsForThisSize).toLocaleString();
+                    } else {
+                        countCell.textContent = '-';
+                    }
+                });
+            }
+        }
+
+        // Calculate ball charge
+        document.getElementById('calculate-ball-charge-btn').addEventListener('click', function() {
+            calculateBallCharge();
+        });
+
+        function calculateBallCharge() {
+            const millDiameter = parseFloat(document.getElementById('mill-diameter').value);
+            const millLength = parseFloat(document.getElementById('mill-length').value);
+            const millSpeed = parseFloat(document.getElementById('mill-speed').value);
+            const workIndex = parseFloat(document.getElementById('work-index').value);
+            const ballDensity = parseFloat(document.getElementById('ball-density').value) || 7800;
+            const chargeLevel = parseFloat(document.getElementById('charge-level').value);
+            
+            if (!millDiameter || !millLength || !chargeLevel) {
+                alert('Please fill in mill diameter, length, and charge level!');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
+            // Simulate calculation delay
+            setTimeout(() => {
+                const results = performBallChargeCalculations({
+                    diameter: millDiameter,
+                    length: millLength,
+                    speed: millSpeed,
+                    workIndex: workIndex,
+                    density: ballDensity,
+                    level: chargeLevel
+                });
+                
+                document.getElementById('loading-overlay').classList.add('hidden');
+                displayBallChargeResults(results);
+                document.getElementById('results-section').style.display = 'block';
+            }, 1000);
+        }
+
+        function performBallChargeCalculations(params) {
+            const { diameter, length, speed, workIndex, density, level } = params;
+            
+            // Calculate mill volume
+            const millVolume = Math.PI * Math.pow(diameter / 2, 2) * length; // m³
+            
+            // Calculate charge volume
+            const chargeVolume = millVolume * (level / 100);
+            
+            // Calculate charge weight
+            const chargeWeight = chargeVolume * density / 1000; // Convert to tons
+            
+            // Calculate filling ratio status
+            let fillingStatus = 'Good';
+            let fillingClass = 'good';
+            if (level < 25) {
+                fillingStatus = 'Low';
+                fillingClass = 'poor';
+            } else if (level > 35) {
+                fillingStatus = 'High';
+                fillingClass = 'poor';
+            } else if (level < 28) {
+                fillingStatus = 'Fair';
+                fillingClass = 'fair';
+            } else if (level > 32) {
+                fillingStatus = 'Fair';
+                fillingClass = 'fair';
+            }
+            
+            // Calculate grinding efficiency (simplified model)
+            let grindingEfficiency = 75; // Base efficiency
+            
+            // Adjust based on charge level
+            if (level >= 28 && level <= 32) {
+                grindingEfficiency = 85 + Math.random() * 5; // 85-90%
+            } else if (level >= 25 && level <= 35) {
+                grindingEfficiency = 80 + Math.random() * 5; // 80-85%
+            } else {
+                grindingEfficiency = 70 + Math.random() * 5; // 70-75%
+            }
+            
+            // Adjust based on work index if provided
+            if (workIndex) {
+                if (workIndex < 15) {
+                    grindingEfficiency += 3; // Easy grinding
+                } else if (workIndex > 20) {
+                    grindingEfficiency -= 3; // Hard grinding
+                }
+            }
+            
+            // Adjust based on mill speed if provided
+            if (speed) {
+                const criticalSpeed = 42.3 / Math.sqrt(diameter);
+                const speedRatio = speed / criticalSpeed;
+                if (speedRatio >= 0.65 && speedRatio <= 0.75) {
+                    grindingEfficiency += 2; // Optimal speed range
+                }
+            }
+            
+            grindingEfficiency = Math.min(Math.max(grindingEfficiency, 60), 95); // Clamp between 60-95%
+            
+            // Set grinding efficiency status
+            let grindingStatus = 'Good';
+            let grindingClass = 'good';
+            if (grindingEfficiency < 75) {
+                grindingStatus = 'Poor';
+                grindingClass = 'poor';
+            } else if (grindingEfficiency < 82) {
+                grindingStatus = 'Fair';
+                grindingClass = 'fair';
+            }
+            
+            return {
+                chargeVolume,
+                chargeWeight,
+                fillingRatio: level,
+                fillingStatus,
+                fillingClass,
+                grindingEfficiency,
+                grindingStatus,
+                grindingClass,
+                millVolume
+            };
+        }
+
+        function displayBallChargeResults(results) {
+            document.getElementById('charge-volume-value').textContent = results.chargeVolume.toFixed(2);
+            document.getElementById('charge-weight-value').textContent = results.chargeWeight.toFixed(1);
+            document.getElementById('filling-ratio-value').textContent = results.fillingRatio.toFixed(1) + '%';
+            
+            const fillingStatusElement = document.getElementById('filling-ratio-status');
+            fillingStatusElement.textContent = results.fillingStatus;
+            fillingStatusElement.className = 'kpi-label ' + results.fillingClass;
+            
+            document.getElementById('grinding-eff-value').textContent = results.grindingEfficiency.toFixed(1) + '%';
+            
+            const grindingStatusElement = document.getElementById('grinding-eff-status');
+            grindingStatusElement.textContent = results.grindingStatus;
+            grindingStatusElement.className = 'kpi-label ' + results.grindingClass;
+            
+            // Update target table current values
+            document.getElementById('current-charge-level').textContent = results.fillingRatio.toFixed(1) + '%';
+            document.getElementById('current-grinding-eff').textContent = results.grindingEfficiency.toFixed(1) + '%';
+            
+            generateBallDistributionChart();
+            generateBallChargeRecommendations(results);
+        }
+
+        function generateBallDistributionChart() {
+            const ctx = document.getElementById('ball-distribution-chart').getContext('2d');
+            
+            if (window.ballChart) {
+                window.ballChart.destroy();
+            }
+            
+            const sizes = [];
+            const weights = [];
+            
+            const rows = document.querySelectorAll('#ball-size-table-body tr');
+            rows.forEach(row => {
+                const sizeInput = row.querySelector('.ball-size-input');
+                const weightInput = row.querySelector('.ball-weight-input');
+                
+                const size = parseFloat(sizeInput.value);
+                const weight = parseFloat(weightInput.value);
+                
+                if (!isNaN(size) && size > 0 && !isNaN(weight) && weight > 0) {
+                    sizes.push(size);
+                    weights.push(weight);
+                }
+            });
+            
+            window.ballChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sizes.map(s => `${s} mm`),
+                    datasets: [{
+                        label: 'Ball Distribution (%)',
+                        data: weights,
+                        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Weight Percentage (%)'
+                            },
+                            max: Math.max(...weights, 50)
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ball Size'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Ball Size Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateBallChargeRecommendations(results) {
+            let recommendations = '';
+            
+            if (results.fillingRatio < 25) {
+                recommendations += `<p data-en="• Charge level is too low (${results.fillingRatio.toFixed(1)}%). Increase ball charge for better grinding efficiency." data-ar="• مستوى الشحن منخفض جداً (${results.fillingRatio.toFixed(1)}%). زد شحن الكرات لكفاءة طحن أفضل.">• Charge level is too low (${results.fillingRatio.toFixed(1)}%). Increase ball charge for better grinding efficiency.</p>`;
+            } else if (results.fillingRatio > 35) {
+                recommendations += `<p data-en="• Charge level is too high (${results.fillingRatio.toFixed(1)}%). Reduce ball charge to prevent mill overloading." data-ar="• مستوى الشحن مرتفع جداً (${results.fillingRatio.toFixed(1)}%). قلل شحن الكرات لمنع زيادة حمولة الطاحونة.">• Charge level is too high (${results.fillingRatio.toFixed(1)}%). Reduce ball charge to prevent mill overloading.</p>`;
+            }
+            
+            if (results.grindingEfficiency < 75) {
+                recommendations += `<p data-en="• Grinding efficiency is below target. Consider optimizing ball size distribution and charge level." data-ar="• كفاءة الطحن أقل من الهدف. فكر في تحسين توزيع أحجام الكرات ومستوى الشحن.">• Grinding efficiency is below target. Consider optimizing ball size distribution and charge level.</p>`;
+            }
+            
+            // Check ball size distribution
+            const rows = document.querySelectorAll('#ball-size-table-body tr');
+            if (rows.length < 3) {
+                recommendations += `<p data-en="• Use at least 3 different ball sizes for optimal grinding performance." data-ar="• استخدم على الأقل 3 أحجام مختلفة من الكرات لأداء طحن أمثل.">• Use at least 3 different ball sizes for optimal grinding performance.</p>`;
+            }
+            
+            recommendations += '<p data-en="• Monitor ball wear regularly and replace worn balls to maintain efficiency." data-ar="• راقب تآكل الكرات بانتظام واستبدل الكرات البالية للحفاظ على الكفاءة.">• Monitor ball wear regularly and replace worn balls to maintain efficiency.</p>';
+            recommendations += '<p data-en="• Maintain proper mill speed for optimal grinding action." data-ar="• حافظ على السرعة المناسبة للطحونة للعمل الأمثل للطحن.">• Maintain proper mill speed for optimal grinding action.</p>';
+            
+            document.getElementById('recommendations-content').innerHTML = recommendations;
+        }
+        
+        // Button event listeners
+        document.getElementById('add-ball-size-row').addEventListener('click', function() {
+            addBallSizeRow();
+        });
+        
+        document.getElementById('add-default-ball-sizes').addEventListener('click', function() {
+            const standardSizes = [100, 80, 60, 50, 40, 30, 25, 20, 15, 10];
+            const existingSizes = Array.from(document.querySelectorAll('.ball-size-input')).map(input => parseFloat(input.value));
+            
+            standardSizes.forEach(size => {
+                if (!existingSizes.includes(size)) {
+                    addBallSizeRow(size, '');
+                }
+            });
+        });
+        
+        document.getElementById('print-ball-report').addEventListener('click', function() {
+            window.print();
+        });
+        
+        document.getElementById('new-ball-analysis').addEventListener('click', function() {
+            document.getElementById('results-section').style.display = 'none';
+        });
+
+        // Save/Load Data functions
+        document.getElementById('save-ball-data').addEventListener('click', function() {
+            const ballData = collectBallData();
+            const info = {
+                companyName: document.getElementById('company-name').value || '',
+                reportDate: document.getElementById('report-date').value || '',
+                preparedBy: document.getElementById('report-preparer').value || '',
+                position: document.getElementById('report-position').value || '',
+                millId: document.getElementById('mill-id').value || '',
+                productionDate: document.getElementById('production-date').value || '',
+                notes: document.getElementById('additional-notes').value || ''
+            };
+            
+            if (ballData.sizes.length === 0) {
+                alert('No ball size data to save.');
+                return;
+            }
+            
+            const saveObj = { ballData: ballData, generalInfo: info };
+            try {
+                localStorage.setItem('ballChargeSavedData', JSON.stringify(saveObj));
+                alert('Data saved successfully!');
+            } catch (e) {
+                alert('Unable to save data: ' + e.message);
+            }
+        });
+        
+        document.getElementById('load-ball-data').addEventListener('click', function() {
+            const saved = localStorage.getItem('ballChargeSavedData');
+            if (!saved) {
+                alert('No saved data found.');
+                return;
+            }
+            try {
+                const data = JSON.parse(saved);
+                // Populate general info
+                if (data.generalInfo) {
+                    document.getElementById('company-name').value = data.generalInfo.companyName || '';
+                    document.getElementById('report-date').value = data.generalInfo.reportDate || '';
+                    document.getElementById('report-preparer').value = data.generalInfo.preparedBy || '';
+                    document.getElementById('report-position').value = data.generalInfo.position || '';
+                    document.getElementById('mill-id').value = data.generalInfo.millId || '';
+                    document.getElementById('production-date').value = data.generalInfo.productionDate || '';
+                    document.getElementById('additional-notes').value = data.generalInfo.notes || '';
+                }
+                // Populate ball size table
+                const tbody = document.getElementById('ball-size-table-body');
+                tbody.innerHTML = '';
+                if (data.ballData && data.ballData.sizes) {
+                    data.ballData.sizes.forEach(() => {
+                        addBallSizeRow();
+                    });
+                    const rows = document.querySelectorAll('#ball-size-table-body tr');
+                    rows.forEach((row, idx) => {
+                        const inputs = row.querySelectorAll('input');
+                        if (inputs.length >= 2) {
+                            inputs[0].value = data.ballData.sizes[idx] !== undefined ? data.ballData.sizes[idx] : '';
+                            inputs[1].value = data.ballData.weights[idx] !== undefined ? data.ballData.weights[idx] : '';
+                        }
+                    });
+                    updateBallCounts();
+                }
+                alert('Saved data loaded successfully.');
+            } catch (e) {
+                alert('Error loading saved data: ' + e.message);
+            }
+        });
+
+        function collectBallData() {
+            const ballData = {
+                sizes: [],
+                weights: []
+            };
+            
+            const rows = document.querySelectorAll('#ball-size-table-body tr');
+            rows.forEach(row => {
+                const sizeInput = row.querySelector('.ball-size-input');
+                const weightInput = row.querySelector('.ball-weight-input');
+                
+                if (sizeInput && weightInput) {
+                    const size = parseFloat(sizeInput.value);
+                    const weight = parseFloat(weightInput.value);
+                    
+                    if (!isNaN(size) && size > 0 && !isNaN(weight) && weight >= 0) {
+                        ballData.sizes.push(size);
+                        ballData.weights.push(weight);
+                    }
+                }
+            });
+            
+            return ballData;
+        }
+        
+        document.getElementById('load-ball-example').addEventListener('click', function() {
+            // Clear existing data
+            document.getElementById('ball-size-table-body').innerHTML = '';
+            
+            // Example data
+            const exampleData = [
+                { size: 80, weight: 40 },
+                { size: 60, weight: 30 },
+                { size: 40, weight: 20 },
+                { size: 20, weight: 10 }
+            ];
+            
+            exampleData.forEach(data => {
+                addBallSizeRow(data.size, data.weight);
+            });
+            
+            // Fill form fields
+            document.getElementById('company-name').value = 'Asrar Cement Company';
+            document.getElementById('report-preparer').value = 'Engineer Ali Ahmed';
+            document.getElementById('report-position').value = 'Process Engineer';
+            document.getElementById('mill-id').value = 'Raw Mill #1';
+            document.getElementById('mill-diameter').value = '5.0';
+            document.getElementById('mill-length').value = '10.0';
+            document.getElementById('mill-speed').value = '16.5';
+            document.getElementById('work-index').value = '16.5';
+            document.getElementById('charge-level').value = '30';
+            document.getElementById('additional-notes').value = '• Monitor ball charge levels weekly\n• Check for optimal size distribution\n• Track grinding efficiency trends\n• Maintain mill speed at 16.5 RPM';
+            
+            updateBallCounts();
+            alert('Example data loaded successfully! Click "Calculate Ball Charge" to see results.');
+        });
+
+        // Update ball counts when parameters change
+        document.getElementById('ball-density').addEventListener('change', updateBallCounts);
+        document.getElementById('mill-diameter').addEventListener('change', updateBallCounts);
+        document.getElementById('mill-length').addEventListener('change', updateBallCounts);
+        document.getElementById('charge-level').addEventListener('change', updateBallCounts);
+    </script>
+    <script src="./common.js"></script>
+</body>
+</html>

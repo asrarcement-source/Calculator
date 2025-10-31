@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cement Kiln Heat Balance Calculator</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Additional custom styles for heat balance calculator */
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .good { color: var(--success-color); }
+        .fair { color: var(--warning-color); }
+        .poor { color: var(--danger-color); }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .recommendations {
+            background: #fff9e6;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .ai-analysis {
+            background: #f0f8ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* Splash Screen Styles */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .splash-screen .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Print Header and Footer */
+        .print-header {
+            display: none;
+        }
+        
+        .print-footer {
+            display: none;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.75in;
+            }
+            
+            .print-header, .print-footer {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                background: white;
+                z-index: 100;
+                padding: 10px 0.75in;
+            }
+            
+            .print-header {
+                top: 0;
+                height: 70px;
+                border-bottom: 2px solid var(--primary-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10pt;
+            }
+            
+            .print-footer {
+                bottom: 0;
+                height: 30px;
+                border-top: 1px solid var(--border-color);
+                text-align: center;
+                font-size: 9pt;
+                color: var(--text-secondary);
+                line-height: 30px;
+            }
+            
+            body {
+                padding-top: 80px;
+                padding-bottom: 40px;
+                font-size: 12pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                page-break-inside: avoid;
+            }
+            
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Custom styles for this calculator */
+        .developer-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .developer-info h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .developer-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .api-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-good { background-color: var(--success-color); }
+        .status-fair { background-color: var(--warning-color); }
+        .status-poor { background-color: var(--danger-color); }
+
+        .heat-parameter {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .heat-parameter h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .temp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .section-divider {
+            border-top: 2px solid var(--primary-color);
+            margin: 30px 0 20px 0;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div>
+            <h1 data-en="Cement Kiln Heat Balance Calculator" data-ar="حاسبة توازن الطاقة الحراري في أفران الأسمنت">Cement Kiln Heat Balance Calculator</h1>
+            <p data-en="Developed by: Mr. Fadi M. Darwesh" data-ar="تطوير: السيد فادي م. درويش">Developed by: Mr. Fadi M. Darwesh</p>
+            <p data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</p>
+            <p data-en="asrar.cement@gmail.com" data-ar="asrar.cement@gmail.com">asrar.cement@gmail.com</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <div>
+            <strong data-en="Cement Kiln Heat Balance Calculator" data-ar="حاسبة توازن الطاقة الحراري في أفران الأسمنت">Cement Kiln Heat Balance Calculator</strong>
+        </div>
+        <div>
+            <strong data-en="Confidential Report" data-ar="تقرير سري">Confidential Report</strong>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer">
+        <span data-en="Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com" data-ar="السيد فادي م. درويش - أخصائي ضمان الجودة والبحوث والتطوير - asrar.cement@gmail.com">Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com</span>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header no-print">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 data-en="Cement Kiln Heat Balance Calculator" data-ar="حاسبة توازن الطاقة الحراري في أفران الأسمنت">Cement Kiln Heat Balance Calculator</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="language-switch">
+                        <button class="lang-btn active" id="lang-en">English</button>
+                        <button class="lang-btn" id="lang-ar">العربية</button>
+                    </div>
+                </div>
+            </div>
+        <a href="index.html" class="back-btn" style="position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; z-index: 100;"><i class="fas fa-arrow-right"></i>العودة للرئيسية</a>
+</header>
+
+        <div class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 data-en="Advanced Heat Balance Calculator" data-ar="حاسبة التوازن الحراري المتقدمة">Advanced Heat Balance Calculator</h2>
+                    <p data-en="Comprehensive analysis tool for cement kiln heat balance and thermal efficiency optimization" data-ar="أداة شاملة لتحليل توازن الحرارة في أفران الأسمنت وتحسين الكفاءة الحرارية">Comprehensive analysis tool for cement kiln heat balance and thermal efficiency optimization</p>
+                </div>
+            </section>
+
+            <!-- Company & Report Information -->
+            <div class="card">
+                <h2 class="section-title" data-en="Company & Report Information" data-ar="معلومات الشركة والتقرير">Company & Report Information</h2>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="company-name" data-en="Company Name" data-ar="اسم الشركة">Company Name</label>
+                        <input type="text" id="company-name" placeholder="Enter company name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-date" data-en="Report Date" data-ar="تاريخ التقرير">Report Date</label>
+                        <input type="date" id="report-date">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-preparer" data-en="Report Prepared By" data-ar="معد التقرير">Report Prepared By</label>
+                        <input type="text" id="report-preparer" placeholder="Enter preparer name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-position" data-ar="منصب معد التقرير" data-en="Preparer Position">Preparer Position</label>
+                        <input type="text" id="report-position" placeholder="Enter preparer position">
+                    </div>
+                    <div class="input-group">
+                        <label for="kiln-type" data-en="Kiln Type" data-ar="نوع الفرن">Kiln Type</label>
+                        <input type="text" id="kiln-type" placeholder="e.g., Rotary Kiln, etc.">
+                    </div>
+                    <div class="input-group">
+                        <label for="production-date" data-en="Production Date" data-ar="تاريخ الإنتاج">Production Date</label>
+                        <input type="date" id="production-date">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heat Balance Parameters -->
+            <div class="card">
+                <h2 class="section-title" data-en="Heat Balance Parameters" data-ar="معايير التوازن الحراري">Heat Balance Parameters</h2>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="raw-material-temp" data-en="Raw Material Temperature (°C)" data-ar="حرارة المادة الخام (°م)">Raw Material Temperature (°C)</label>
+                        <input type="number" id="raw-material-temp" placeholder="90" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="clinker-temp" data-en="Clinker Temperature (°C)" data-ar="حرارة الكلنكر (°م)">Clinker Temperature (°C)</label>
+                        <input type="number" id="clinker-temp" placeholder="1450" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="kiln-inlet-temp" data-en="Kiln Inlet Temperature (°C)" data-ar="حرارة مدخل الفرن (°م)">Kiln Inlet Temperature (°C)</label>
+                        <input type="number" id="kiln-inlet-temp" placeholder="1150" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="exhaust-gas-temp" data-en="Exhaust Gas Temperature (°C)" data-ar="حرارة الغازات العادمة (°م)">Exhaust Gas Temperature (°C)</label>
+                        <input type="number" id="exhaust-gas-temp" placeholder="320" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="secondary-air-temp" data-en="Secondary Air Temperature (°C)" data-ar="حرارة الهواء الثانوي (°م)">Secondary Air Temperature (°C)</label>
+                        <input type="number" id="secondary-air-temp" placeholder="1050" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="heat-recovery-efficiency" data-en="Heat Recovery Efficiency (%)" data-ar="كفاءة استرداد الحرارة (%)">Heat Recovery Efficiency (%)</label>
+                        <input type="number" id="heat-recovery-efficiency" placeholder="85" step="0.1" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Settings -->
+            <div class="card">
+                <h2 class="section-title" data-en="Target Settings" data-ar="إعدادات الأهداف">Target Settings</h2>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;" data-en="Set your factory's specific targets for heat balance optimization" data-ar="حدد أهداف مصنعك المحددة لتحسين التوازن الحراري">Set your factory's specific targets for heat balance optimization</p>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="target-heat-efficiency" data-en="Target Heat Efficiency (%)" data-ar="هدف الكفاءة الحرارية (%)">Target Heat Efficiency (%)</label>
+                        <input type="number" id="target-heat-efficiency" placeholder="75" step="0.1" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="specific-heat-consumption" data-en="Specific Heat Consumption Target (kcal/kg)" data-ar="هدف استهلاك الحرارة النوعي (كيلو كالوري/كيلو)">Specific Heat Consumption Target (kcal/kg)</label>
+                        <input type="number" id="specific-heat-consumption" placeholder="750" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="heat-loss-reduction" data-en="Heat Loss Reduction Goal (%)" data-ar="هدف تقليل فقدان الحرارة (%)">Heat Loss Reduction Goal (%)</label>
+                        <input type="number" id="heat-loss-reduction" placeholder="15" step="0.1" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Heat Parameters -->
+            <div class="card">
+                <h2 class="section-title" data-en="Additional Heat Parameters" data-ar="معايير حرارية إضافية">Additional Heat Parameters</h2>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="clinker-production-rate" data-en="Clinker Production Rate (t/h)" data-ar="معدل إنتاج الكلنكر (طن/ساعة)">Clinker Production Rate (t/h)</label>
+                        <input type="number" id="clinker-production-rate" placeholder="100" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="fuel-consumption" data-en="Fuel Consumption (kg/h)" data-ar="استهلاك الوقود (كيلو/ساعة)">Fuel Consumption (kg/h)</label>
+                        <input type="number" id="fuel-consumption" placeholder="8500" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="fuel-calorific-value" data-en="Fuel Calorific Value (kcal/kg)" data-ar="القيمة الحرارية للوقود (كيلو كالوري/كيلو)">Fuel Calorific Value (kcal/kg)</label>
+                        <input type="number" id="fuel-calorific-value" placeholder="8200" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="ambient-temperature" data-en="Ambient Temperature (°C)" data-ar="درجة حرارة المحيط (°م)">Ambient Temperature (°C)</label>
+                        <input type="number" id="ambient-temperature" placeholder="25" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Analysis -->
+            <div class="card">
+                <h2 class="section-title" data-en="Advanced AI Analysis" data-ar="التحليل المتقدم بالذكاء الاصطناعي">Advanced AI Analysis</h2>
+                
+                <div id="api-status" class="api-status disconnected" data-en="API: Disconnected" data-ar="API: غير متصل">
+                    API: Disconnected
+                </div>
+                
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="api-key" data-en="OpenAI API Key" data-ar="مفتاح OpenAI API">OpenAI API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
+                        <small style="color: var(--text-secondary); display: block; margin-top: 5px;" data-en="Get your API key from https://platform.openai.com" data-ar="احصل على المفتاح من https://platform.openai.com">Get your API key from https://platform.openai.com</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="api-model" data-en="AI Model" data-ar="نموذج الذكاء الاصطناعي">AI Model</label>
+                        <select id="api-model">
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast & Cost-effective)</option>
+                            <option value="gpt-4">GPT-4 (Most Advanced)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="test-api" data-en="Test API Connection" data-ar="اختبار اتصال API">Test API Connection</button>
+                    <button class="btn btn-primary" id="ai-analysis-btn" data-en="Get AI Analysis" data-ar="الحصول على تحليل الذكاء الاصطناعي">Get AI Analysis</button>
+                    <button class="btn btn-success" id="save-api-key" data-en="Save API Key" data-ar="حفظ المفتاح">Save API Key</button>
+                </div>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="card">
+                <h2 class="section-title" data-en="Additional Notes" data-ar="ملاحظات إضافية">Additional Notes</h2>
+                <div class="input-group">
+                    <label for="additional-notes" data-en="Add your notes and observations here:" data-ar="أضف ملاحظاتك وتوصياتك هنا:">Add your notes and observations here:</label>
+                    <textarea id="additional-notes" rows="4" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-family: var(--font-arabic);" placeholder="Enter any additional notes, observations, or recommendations..."></textarea>
+                </div>
+                <small style="color: var(--text-secondary);" data-en="These notes will be included in the final report" data-ar="هذه الملاحظات ستظهر في التقرير النهائي">These notes will be included in the final report</small>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="results-section">
+                <div class="card">
+                    <h2 class="section-title" data-en="Heat Balance Results" data-ar="نتائج التوازن الحراري">Heat Balance Results</h2>
+                    
+                    <div class="grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <!-- KPI Cards -->
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Heat Input" data-ar="مدخلات الحرارة">Heat Input</div>
+                            <div class="kpi-value" id="heat-input-value">-</div>
+                            <div class="kpi-label" data-en="kcal/kg clinker" data-ar="كيلو كالوري/كيلو كلنكر">kcal/kg clinker</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Total heat energy input to the kiln system per kg of clinker produced" data-ar="إجمالي طاقة الحرارة المدخلة إلى نظام الفرن لكل كيلو من الكلنكر المنتج"></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Heat Utilized" data-ar="الحرارة المستخدمة">Heat Utilized</div>
+                            <div class="kpi-value" id="heat-utilized-value">-</div>
+                            <div class="kpi-label" id="heat-utilized-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Heat energy effectively used for clinker formation and heating processes" data-ar="طاقة الحرارة المستخدمة فعلياً لتكوين الكلنكر وعمليات التسخين"></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Heat Losses" data-ar="فقدان الحرارة">Heat Losses</div>
+                            <div class="kpi-value" id="heat-losses-value">-</div>
+                            <div class="kpi-label" id="heat-losses-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Heat energy lost through exhaust gases, radiation, and other losses" data-ar="طاقة الحرارة المفقودة عبر الغازات العادمة والإشعاع والخسائر الأخرى"></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Heat Efficiency" data-ar="كفاءة الحرارة">Heat Efficiency</div>
+                            <div class="kpi-value" id="heat-efficiency-value">-</div>
+                            <div class="kpi-label" id="heat-efficiency-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Percentage of heat energy effectively utilized for clinker production" data-ar="النسبة المئوية لطاقة الحرارة المستخدمة فعلياً لإنتاج الكلنكر"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="chart-container">
+                        <canvas id="heat-balance-chart"></canvas>
+                    </div>
+                    
+                    <!-- Data Tables -->
+                    <div class="section-divider"></div>
+                    <h3 class="section-heading" data-en="Heat Balance Data Tables" data-ar="جداول بيانات التوازن الحراري">Heat Balance Data Tables</h3>
+                    
+                    <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <!-- Heat Input Data -->
+                        <div class="data-table">
+                            <h4><i class="fas fa-arrow-down"></i> <span data-en="Heat Input Data" data-ar="بيانات مدخلات الحرارة">Heat Input Data</span></h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th data-en="Source" data-ar="المصدر">Source</th>
+                                        <th data-en="Value" data-ar="القيمة">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-en="Fuel Heat" data-ar="حرارة الوقود">Fuel Heat</td>
+                                        <td id="fuel-heat-value">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Secondary Air Heat" data-ar="حرارة الهواء الثانوي">Secondary Air Heat</td>
+                                        <td id="secondary-air-heat">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Preheating Heat" data-ar="حرارة التسخين المسبق">Preheating Heat</td>
+                                        <td id="preheating-heat">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Total Input" data-ar="إجمالي المدخل">Total Input</td>
+                                        <td id="total-heat-input">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Heat Output Data -->
+                        <div class="data-table">
+                            <h4><i class="fas fa-arrow-up"></i> <span data-en="Heat Output Data" data-ar="بيانات مخرجات الحرارة">Heat Output Data</span></h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th data-en="Component" data-ar="المكون">Component</th>
+                                        <th data-en="Value" data-ar="القيمة">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-en="Clinker Formation" data-ar="تكوين الكلنكر">Clinker Formation</td>
+                                        <td id="clinker-formation-heat">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Sensible Heat" data-ar="الحرارة المحسوسة">Sensible Heat</td>
+                                        <td id="sensible-heat">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Evaporation Heat" data-ar="حرارة التبخر">Evaporation Heat</td>
+                                        <td id="evaporation-heat">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Total Utilized" data-ar="إجمالي المستخدم">Total Utilized</td>
+                                        <td id="total-heat-utilized">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Heat Loss Analysis -->
+                        <div class="data-table">
+                            <h4><i class="fas fa-thermometer-half"></i> <span data-en="Heat Loss Analysis" data-ar="تحليل فقدان الحرارة">Heat Loss Analysis</span></h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th data-en="Loss Type" data-ar="نوع الفقد">Loss Type</th>
+                                        <th data-en="Value" data-ar="القيمة">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-en="Exhaust Gases" data-ar="الغازات العادمة">Exhaust Gases</td>
+                                        <td id="exhaust-loss">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Radiation" data-ar="الإشعاع">Radiation</td>
+                                        <td id="radiation-loss">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Conduction" data-ar="التوصيل">Conduction</td>
+                                        <td id="conduction-loss">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-en="Total Losses" data-ar="إجمالي الفقد">Total Losses</td>
+                                        <td id="total-heat-losses">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Analysis -->
+                    <div class="ai-analysis" id="ai-analysis-container">
+                        <h3 class="section-heading" data-en="AI Analysis" data-ar="تحليل الذكاء الاصطناعي">AI Analysis</h3>
+                        <div id="ai-analysis-content">
+                            <p data-en="No AI analysis available yet. Click 'Get AI Analysis' to generate." data-ar="لا يوجد تحليل بالذكاء الاصطناعي بعد. انقر على 'الحصول على تحليل الذكاء الاصطناعي' لإنشائه.">No AI analysis available yet. Click 'Get AI Analysis' to generate.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="recommendations">
+                        <h3 class="section-heading" data-en="Recommendations" data-ar="التوصيات">Recommendations</h3>
+                        <div id="recommendations-content"></div>
+                    </div>
+                    
+                    <div class="button-group no-print">
+                        <button class="btn btn-success" id="print-report" data-en="Print Report" data-ar="طباعة التقرير">Print Report</button>
+                        <button class="btn btn-warning" id="export-pdf" data-en="Export as PDF" data-ar="تصدير كـ PDF">Export as PDF</button>
+                        <button class="btn btn-secondary" id="new-analysis" data-en="New Analysis" data-ar="تحليل جديد">New Analysis</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="developer-info no-print">
+                <h3 data-en="System Developer" data-ar="مطور النظام">System Developer</h3>
+                <p><strong data-en="Mr. Fadi M. Darwesh" data-ar="السيد فادي م. درويش">Mr. Fadi M. Darwesh</strong></p>
+                <p data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</p>
+                <p>asrar.cement@gmail.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer no-print">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 data-en="Cement Kiln Heat Balance Calculator" data-ar="حاسبة توازن الطاقة الحراري في أفران الأسمنت">Cement Kiln Heat Balance Calculator</h4>
+                    <p data-en="Advanced calculation tools for kiln heat balance and thermal efficiency optimization" data-ar="أدوات حساب متقدمة لتوازن حرارة الأفران وتحسين الكفاءة الحرارية">Advanced calculation tools for kiln heat balance and thermal efficiency optimization</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Developer" data-ar="المطور">Developer</h4>
+                    <ul>
+                        <li>Mr. Fadi M. Darwesh</li>
+                        <li data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</li>
+                        <li>asrar.cement@gmail.com</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Features" data-ar="المميزات">Features</h4>
+                    <ul>
+                        <li data-en="Heat Balance Analysis" data-ar="تحليل التوازن الحراري">Heat Balance Analysis</li>
+                        <li data-en="Thermal Efficiency Calculation" data-ar="حساب الكفاءة الحرارية">Thermal Efficiency Calculation</li>
+                        <li data-en="AI-Powered Insights" data-ar="رؤى مدعومة بالذكاء الاصطناعي">AI-Powered Insights</li>
+                        <li data-en="Professional Reports" data-ar="تقارير احترافية">Professional Reports</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--gray-700);">
+                <p data-en="© 2025 Cement Kiln Heat Balance Calculator System. All rights reserved." data-ar="© 2025 نظام حاسبة توازن الطاقة الحراري. جميع الحقوق محفوظة.">© 2025 Cement Kiln Heat Balance Calculator System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-cog"></i>
+            <p data-en="Calculating..." data-ar="جاري الحساب...">Calculating...</p>
+        </div>
+    </div>
+
+    <script>
+        // Language switching functionality
+        document.getElementById('lang-en').addEventListener('click', function() {
+            setLanguage('en');
+        });
+        
+        document.getElementById('lang-ar').addEventListener('click', function() {
+            setLanguage('ar');
+        });
+        
+        function setLanguage(lang) {
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update text content based on data attributes
+            document.querySelectorAll('[data-en]').forEach(element => {
+                if (lang === 'en') {
+                    element.textContent = element.getAttribute('data-en');
+                } else {
+                    element.textContent = element.getAttribute('data-ar');
+                }
+            });
+            
+            // Update placeholders
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
+                const enText = element.getAttribute('data-en-placeholder');
+                const arText = element.getAttribute('data-ar-placeholder');
+                
+                if (enText && arText) {
+                    element.placeholder = lang === 'en' ? enText : arText;
+                }
+            });
+            
+            // Update direction
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+        
+        // Initialize with English
+        setLanguage('en');
+        
+        // Initialize splash screen
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 2000);
+            
+            // Set current dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('report-date').value = today;
+            document.getElementById('production-date').value = today;
+            
+            // Load saved API key
+            const savedApiKey = localStorage.getItem('heat_balance_api_key');
+            if (savedApiKey) {
+                document.getElementById('api-key').value = savedApiKey;
+                updateApiStatus('connected', 'API: Connected (Using saved key)');
+            }
+        });
+
+        function updateApiStatus(status, message) {
+            const apiStatus = document.getElementById('api-status');
+            apiStatus.className = `api-status ${status}`;
+            apiStatus.textContent = message;
+        }
+
+        // Calculate heat balance
+        document.getElementById('calculate-btn')?.addEventListener('click', function() {
+            calculateHeatBalance();
+        });
+
+        // Auto-calculate when inputs change
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('change', calculateHeatBalance);
+        });
+
+        function calculateHeatBalance() {
+            // Show loading
+            document.getElementById('loading-overlay')?.classList.remove('hidden');
+            
+            // Simulate calculation delay
+            setTimeout(() => {
+                // Get input values
+                const rawMaterialTemp = parseFloat(document.getElementById('raw-material-temp').value) || 90;
+                const clinkerTemp = parseFloat(document.getElementById('clinker-temp').value) || 1450;
+                const kilnInletTemp = parseFloat(document.getElementById('kiln-inlet-temp').value) || 1150;
+                const exhaustGasTemp = parseFloat(document.getElementById('exhaust-gas-temp').value) || 320;
+                const secondaryAirTemp = parseFloat(document.getElementById('secondary-air-temp').value) || 1050;
+                const heatRecoveryEfficiency = parseFloat(document.getElementById('heat-recovery-efficiency').value) || 85;
+                
+                const targetHeatEfficiency = parseFloat(document.getElementById('target-heat-efficiency').value) || 75;
+                const specificHeatConsumption = parseFloat(document.getElementById('specific-heat-consumption').value) || 750;
+                const heatLossReduction = parseFloat(document.getElementById('heat-loss-reduction').value) || 15;
+                
+                const clinkerProductionRate = parseFloat(document.getElementById('clinker-production-rate').value) || 100;
+                const fuelConsumption = parseFloat(document.getElementById('fuel-consumption').value) || 8500;
+                const fuelCalorificValue = parseFloat(document.getElementById('fuel-calorific-value').value) || 8200;
+                const ambientTemp = parseFloat(document.getElementById('ambient-temperature').value) || 25;
+
+                // Calculate heat balance
+                const fuelHeat = (fuelConsumption * fuelCalorificValue) / (clinkerProductionRate * 1000); // kcal/kg
+                const secondaryAirHeat = ((secondaryAirTemp - ambientTemp) * 0.3 * 1000) / (clinkerProductionRate * 1000); // kcal/kg
+                const preheatingHeat = ((kilnInletTemp - rawMaterialTemp) * 0.25 * 1000) / (clinkerProductionRate * 1000); // kcal/kg
+                
+                const totalHeatInput = fuelHeat + secondaryAirHeat + preheatingHeat;
+                
+                const clinkerFormationHeat = 420; // kcal/kg (typical for clinker formation)
+                const sensibleHeat = ((clinkerTemp - kilnInletTemp) * 0.15 * 1000) / (clinkerProductionRate * 1000); // kcal/kg
+                const evaporationHeat = ((kilnInletTemp - ambientTemp) * 0.1 * 1000) / (clinkerProductionRate * 1000); // kcal/kg
+                
+                const totalHeatUtilized = clinkerFormationHeat + sensibleHeat + evaporationHeat;
+                
+                const exhaustLoss = ((exhaustGasTemp - ambientTemp) * 0.4 * 1000) / (clinkerProductionRate * 1000); // kcal/kg
+                const radiationLoss = totalHeatInput * 0.05; // 5% radiation loss
+                const conductionLoss = totalHeatInput * 0.03; // 3% conduction loss
+                
+                const totalHeatLosses = totalHeatInput - totalHeatUtilized;
+                
+                const heatEfficiency = (totalHeatUtilized / totalHeatInput) * 100;
+
+                // Update KPI cards
+                document.getElementById('heat-input-value').textContent = totalHeatInput.toFixed(1);
+                document.getElementById('heat-utilized-value').textContent = totalHeatUtilized.toFixed(1);
+                document.getElementById('heat-losses-value').textContent = totalHeatLosses.toFixed(1);
+                document.getElementById('heat-efficiency-value').textContent = heatEfficiency.toFixed(1) + '%';
+
+                // Set status indicators
+                setStatusIndicator('heat-utilized', totalHeatUtilized, specificHeatConsumption * 0.8, specificHeatConsumption * 0.6, true);
+                setStatusIndicator('heat-losses', totalHeatLosses, totalHeatInput * 0.2, totalHeatInput * 0.3, true);
+                setStatusIndicator('heat-efficiency', heatEfficiency, targetHeatEfficiency, targetHeatEfficiency * 0.8, false);
+
+                // Update data tables
+                document.getElementById('fuel-heat-value').textContent = fuelHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('secondary-air-heat').textContent = secondaryAirHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('preheating-heat').textContent = preheatingHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('total-heat-input').textContent = totalHeatInput.toFixed(1) + ' kcal/kg';
+                
+                document.getElementById('clinker-formation-heat').textContent = clinkerFormationHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('sensible-heat').textContent = sensibleHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('evaporation-heat').textContent = evaporationHeat.toFixed(1) + ' kcal/kg';
+                document.getElementById('total-heat-utilized').textContent = totalHeatUtilized.toFixed(1) + ' kcal/kg';
+                
+                document.getElementById('exhaust-loss').textContent = exhaustLoss.toFixed(1) + ' kcal/kg';
+                document.getElementById('radiation-loss').textContent = radiationLoss.toFixed(1) + ' kcal/kg';
+                document.getElementById('conduction-loss').textContent = conductionLoss.toFixed(1) + ' kcal/kg';
+                document.getElementById('total-heat-losses').textContent = totalHeatLosses.toFixed(1) + ' kcal/kg';
+
+                // Generate charts
+                createHeatBalanceChart(totalHeatInput, totalHeatUtilized, totalHeatLosses);
+                
+                // Generate recommendations
+                generateRecommendations(heatEfficiency, totalHeatLosses, exhaustGasTemp, targetHeatEfficiency);
+
+                // Hide loading
+                document.getElementById('loading-overlay')?.classList.add('hidden');
+                
+                // Show results section
+                document.getElementById('results-section').style.display = 'block';
+            }, 1000);
+        }
+
+        function setStatusIndicator(metric, value, goodThreshold, fairThreshold, lowerIsBetter = false) {
+            const statusElement = document.getElementById(`${metric}-status`);
+            let status, statusClass;
+            
+            if (value === null || typeof value === 'undefined' || isNaN(value)) {
+                statusElement.textContent = 'N/A';
+                statusElement.className = 'kpi-label';
+                return;
+            }
+
+            if (lowerIsBetter) {
+                if (value <= goodThreshold) {
+                    status = 'Good';
+                    statusClass = 'good';
+                } else if (value <= fairThreshold) {
+                    status = 'Fair';
+                    statusClass = 'fair';
+                } else {
+                    status = 'Poor';
+                    statusClass = 'poor';
+                }
+            } else {
+                if (value >= goodThreshold) {
+                    status = 'Good';
+                    statusClass = 'good';
+                } else if (value >= fairThreshold) {
+                    status = 'Fair';
+                    statusClass = 'fair';
+                } else {
+                    status = 'Poor';
+                    statusClass = 'poor';
+                }
+            }
+            
+            statusElement.textContent = status;
+            statusElement.className = 'kpi-label ' + statusClass;
+        }
+
+        function createHeatBalanceChart(totalInput, utilized, losses) {
+            const ctx = document.getElementById('heat-balance-chart').getContext('2d');
+            
+            if (window.heatBalanceChart) {
+                window.heatBalanceChart.destroy();
+            }
+            
+            window.heatBalanceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: document.body.dir === 'rtl' ? 
+                        ['الحرارة المستخدمة', 'فقدان الحرارة'] :
+                        ['Heat Utilized', 'Heat Losses'],
+                    datasets: [{
+                        label: 'Heat Distribution',
+                        data: [utilized, losses],
+                        backgroundColor: [
+                            'rgba(46, 204, 113, 0.8)',
+                            'rgba(231, 76, 60, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(231, 76, 60, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: document.body.dir === 'rtl' ? 
+                                'توزيع الطاقة الحرارية' : 'Heat Energy Distribution',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateRecommendations(efficiency, losses, exhaustTemp, targetEfficiency) {
+            let recommendations = '';
+            
+            if (efficiency < targetEfficiency) {
+                recommendations += `<p data-en="• Heat efficiency (${efficiency.toFixed(1)}%) is below target (${targetEfficiency}%). Consider optimizing fuel combustion and heat recovery." data-ar="• الكفاءة الحرارية (${efficiency.toFixed(1)}%) أقل من الهدف (${targetEfficiency}%). فكر في تحسين احتراق الوقود واسترداد الحرارة.">• Heat efficiency (${efficiency.toFixed(1)}%) is below target (${targetEfficiency}%). Consider optimizing fuel combustion and heat recovery.</p>`;
+            }
+            
+            if (losses > (utilized + losses) * 0.3) {
+                recommendations += `<p data-en="• Heat losses (${losses.toFixed(1)} kcal/kg) are high. Check exhaust gas temperature and improve insulation." data-ar="• فقدان الحرارة (${losses.toFixed(1)} كيلو كالوري/كيلو) مرتفع. تحقق من درجة حرارة الغازات العادمة وحسن العزل.">• Heat losses (${losses.toFixed(1)} kcal/kg) are high. Check exhaust gas temperature and improve insulation.</p>`;
+            }
+            
+            if (exhaustTemp > 350) {
+                recommendations += `<p data-en="• Exhaust gas temperature (${exhaustTemp}°C) is high. Consider improving heat recovery efficiency." data-ar="• درجة حرارة الغازات العادمة (${exhaustTemp}°م) مرتفعة. فكر في تحسين كفاءة استرداد الحرارة.">• Exhaust gas temperature (${exhaustTemp}°C) is high. Consider improving heat recovery efficiency.</p>`;
+            }
+            
+            recommendations += '<p data-en="• Monitor kiln temperatures continuously and maintain optimal operating conditions." data-ar="• راقب درجات حرارة الفرن باستمرار وحافظ على ظروف التشغيل المثلى.">• Monitor kiln temperatures continuously and maintain optimal operating conditions.</p>';
+            recommendations += '<p data-en="• Regular maintenance of refractory materials to minimize heat losses." dataار="• صيانة دورية للمواد المقاومة للحرارة لتقليل فقدان الحرارة.">• Regular maintenance of refractory materials to minimize heat losses.</p>';
+            
+            document.getElementById('recommendations-content').innerHTML = recommendations;
+        }
+        
+        // Button event listeners
+        document.getElementById('print-report')?.addEventListener('click', function() {
+            window.print();
+        });
+        
+        document.getElementById('new-analysis')?.addEventListener('click', function() {
+            document.getElementById('results-section').style.display = 'none';
+        });
+
+        // API Testing functions
+        document.getElementById('test-api')?.addEventListener('click', function() {
+            alert('API test functionality would be implemented here');
+        });
+        
+        document.getElementById('ai-analysis-btn')?.addEventListener('click', function() {
+            alert('AI analysis functionality would be implemented here');
+        });
+        
+        document.getElementById('save-api-key')?.addEventListener('click', function() {
+            const apiKey = document.getElementById('api-key').value;
+            if (apiKey) {
+                localStorage.setItem('heat_balance_api_key', apiKey);
+                updateApiStatus('connected', 'API: Connected (Key saved)');
+                alert('API Key saved successfully!');
+            } else {
+                alert('Please enter an API key first!');
+            }
+        });
+
+        // Add calculate button if it doesn't exist
+        if (!document.getElementById('calculate-btn')) {
+            const calculateBtn = document.createElement('button');
+            calculateBtn.id = 'calculate-btn';
+            calculateBtn.className = 'btn btn-primary btn-lg';
+            calculateBtn.innerHTML = '<i class="fas fa-calculator"></i> <span data-en="Calculate Heat Balance" data-ar="حساب التوازن الحراري">Calculate Heat Balance</span>';
+            calculateBtn.onclick = calculateHeatBalance;
+            
+            // Add to the page
+            const buttonGroup = document.querySelector('.button-group');
+            if (buttonGroup) {
+                buttonGroup.insertBefore(calculateBtn, buttonGroup.firstChild);
+            }
+        }
+    </script>
+    <script src="./common.js"></script>
+</body>
+</html>

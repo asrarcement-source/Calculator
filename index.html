@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أسرار الأسمنت - النظام الشامل</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* ====================================================== */
+        /* ==         🔥 SPLASH SCREEN STYLES 🔥              == */
+        /* ====================================================== */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        #splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+
+        #splash-screen .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* ====================================================== */
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .main-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--success));
+            background-size: 300% 100%;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .main-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGradient 4s ease-in-out infinite;
+        }
+        
+        @keyframes titleGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .main-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .lang-btn.active {
+            background: white;
+            color: var(--primary);
+            border-color: white;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .lang-btn:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+        }
+        
+        .calculators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .calculator-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .calculator-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        
+        .calculator-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(116, 75, 162, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .calculator-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-color: var(--secondary);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .calculator-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .calculator-card:hover::after {
+            opacity: 1;
+        }
+        
+        .calculator-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: var(--secondary);
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        
+        .calculator-card:hover .calculator-icon {
+            transform: scale(1.2) rotate(5deg);
+            color: var(--accent);
+        }
+        
+        .calculator-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+        
+        .calculator-card:hover .calculator-title {
+            color: var(--secondary);
+        }
+        
+        .calculator-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            transition: color 0.3s;
+        }
+        
+        .calculator-card:hover .calculator-description {
+            color: #444;
+        }
+        
+        .category-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 40px 0 20px 0;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--warning));
+        }
+        
+        .footer h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .footer p {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .footer p:last-child {
+            margin-bottom: 0;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .calculators-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-title {
+                font-size: 28px;
+                line-height: 1.2;
+            }
+            
+            .language-switcher {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 10px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+            }
+            
+            .lang-btn {
+                padding: 10px 20px;
+                font-size: 12px;
+            }
+            
+            .main-header {
+                padding: 25px;
+                margin: 15px 0;
+            }
+            
+            .calculator-card {
+                padding: 20px;
+            }
+            
+            .footer {
+                padding: 20px;
+                margin-top: 30px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="splash-screen">
+        <div>
+            <h1 data-ar="أسرار الأسمنت - النظام الشامل" data-en="Cement Secrets - Complete System">أسرار الأسمنت - النظام الشامل</h1>
+            <p data-ar="تطوير: السيد فادي م. درويش" data-en="Developed by: Mr. Fadi M. Darwesh">تطوير: السيد فادي م. درويش</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+    
+    <div class="language-switcher">
+        <button class="lang-btn active" id="lang-ar">العربية</button>
+        <button class="lang-btn" id="lang-en">English</button>
+    </div>
+    
+    <div class="container">
+        <header class="main-header">
+            <h1 class="main-title" data-ar="أسرار الأسمنت - النظام الشامل" data-en="Cement Secrets - Complete System">أسرار الأسمنت - النظام الشامل</h1>
+            <p class="main-subtitle" data-ar="نظام متكامل لجميع حسابات صناعة الأسمنت - 16 حاسبة متخصصة" data-en="Complete system for all cement industry calculations - 16 specialized calculators">نظام متكامل لجميع حسابات صناعة الأسمنت - 16 حاسبة متخصصة</p>
+        </header>
+        
+        <!-- Ball Mill Calculators -->
+        <div class="category-title" data-ar="حسابات الطاحونة الكروية" data-en="Ball Mill Calculators">حسابات الطاحونة الكروية</div>
+        <div class="calculators-grid">
+            <div class="calculator-card" onclick="openCalculator('critical-speed')">
+                <div class="calculator-icon"><i class="fas fa-tachometer-alt"></i></div>
+                <div class="calculator-title" data-ar="السرعة الحرجة" data-en="Critical Speed">السرعة الحرجة</div>
+                <div class="calculator-description" data-ar="حساب السرعة الحرجة للطاحونة الكروية وحساب السرعة التشغيلية المثلى" data-en="Calculate critical speed and optimal operating speed for ball mills">حساب السرعة الحرجة للطاحونة الكروية وحساب السرعة التشغيلية المثلى</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('power-consumption')">
+                <div class="calculator-icon"><i class="fas fa-bolt"></i></div>
+                <div class="calculator-title" data-ar="استهلاك الطاقة" data-en="Power Consumption">استهلاك الطاقة</div>
+                <div class="calculator-description" data-ar="حساب استهلاك الطاقة للطاحونة الكروية بناءً على القطر والطول وإنتاجية الطحن" data-en="Calculate power consumption based on mill diameter, length, and grinding capacity">حساب استهلاك الطاقة للطاحونة الكروية بناءً على القطر والطول وإنتاجية الطحن</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('ball-charge')">
+                <div class="calculator-icon"><i class="fas fa-circle-notch"></i></div>
+                <div class="calculator-title" data-ar="شحن الكرات" data-en="Ball Charge">شحن الكرات</div>
+                <div class="calculator-description" data-ar="حساب نسبة شحن الكرات المثلى في الطاحونة الكروية حسب حجم الطاحونة" data-en="Calculate optimal ball charge percentage in ball mills based on mill size">حساب نسبة شحن الكرات المثلى في الطاحونة الكروية حسب حجم الطاحونة</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('mill-performance')">
+                <div class="calculator-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="calculator-title" data-ar="تحليل الأداء" data-en="Performance Analysis">تحليل الأداء</div>
+                <div class="calculator-description" data-ar="تحليل شامل لأداء الطاحونة الكروية مع مؤشرات الأداء والكفاءة" data-en="Comprehensive ball mill performance analysis with efficiency indicators">تحليل شامل لأداء الطاحونة الكروية مع مؤشرات الأداء والكفاءة</div>
+            </div>
+        </div>
+        
+        <!-- Separator Calculators -->
+        <div class="category-title" data-ar="حسابات المصنفات" data-en="Separator Calculators">حسابات المصنفات</div>
+        <div class="calculators-grid">
+            <div class="calculator-card" onclick="openCalculator('separator-efficiency')">
+                <div class="calculator-icon"><i class="fas fa-filter"></i></div>
+                <div class="calculator-title" data-ar="كفاءة الفصل" data-en="Separation Efficiency">كفاءة الفصل</div>
+                <div class="calculator-description" data-ar="حساب كفاءة المصنف مع تحليل منحنى ترومب والمؤشرات الفنية" data-en="Calculate separator efficiency with Tromp curve analysis and technical indicators">حساب كفاءة المصنف مع تحليل منحنى ترومب والمؤشرات الفنية</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('separator-design')">
+                <div class="calculator-icon"><i class="fas fa-cog"></i></div>
+                <div class="calculator-title" data-ar="تصميم المصنف" data-en="Separator Design">تصميم المصنف</div>
+                <div class="calculator-description" data-ar="تصميم المواصفات الفنية للمصنفات مع حسابات التدفق والضغط" data-en="Design separator specifications with flow and pressure calculations">تصميم المواصفات الفنية للمصنفات مع حسابات التدفق والضغط</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('flow-rate')">
+                <div class="calculator-icon"><i class="fas fa-water"></i></div>
+                <div class="calculator-title" data-ar="معدل التدفق" data-en="Flow Rate">معدل التدفق</div>
+                <div class="calculator-description" data-ar="حساب معدل التدفق في الأنابيب والخيوط مع تحليل فقدان الضغط" data-en="Calculate flow rates in pipes and lines with pressure loss analysis">حساب معدل التدفق في الأنابيب والخيوط مع تحليل فقدان الضغط</div>
+            </div>
+        </div>
+        
+        <!-- Kiln Calculators -->
+        <div class="category-title" data-ar="حسابات الأفران" data-en="Kiln Calculators">حسابات الأفران</div>
+        <div class="calculators-grid">
+            <div class="calculator-card" onclick="openCalculator('kiln-design')">
+                <div class="calculator-icon"><i class="fas fa-fire"></i></div>
+                <div class="calculator-title" data-ar="تصميم الفرن" data-en="Kiln Design">تصميم الفرن</div>
+                <div class="calculator-description" data-ar="تصميم مواصفات الفرن الدوار مع حسابات الإنتاجية والأبعاد" data-en="Design rotary kiln specifications with capacity and dimension calculations">تصميم مواصفات الفرن الدوار مع حسابات الإنتاجية والأبعاد</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('fuel-consumption')">
+                <div class="calculator-icon"><i class="fas fa-gas-pump"></i></div>
+                <div class="calculator-title" data-ar="استهلاك الوقود" data-en="Fuel Consumption">استهلاك الوقود</div>
+                <div class="calculator-description" data-ar="حساب استهلاك الوقود للفرن مع تحليل الكفاءة الحرارية" data-en="Calculate kiln fuel consumption with thermal efficiency analysis">حساب استهلاك الوقود للفرن مع تحليل الكفاءة الحرارية</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('heat-balance')">
+                <div class="calculator-icon"><i class="fas fa-thermometer-half"></i></div>
+                <div class="calculator-title" data-ar="التوازن الحراري" data-en="Heat Balance">التوازن الحراري</div>
+                <div class="calculator-description" data-ar="حساب التوازن الحراري الشامل للفرن مع تحليل إنتاجية الكلنكر" data-en="Calculate comprehensive heat balance with clinker production analysis">حساب التوازن الحراري الشامل للفرن مع تحليل إنتاجية الكلنكر</div>
+            </div>
+        </div>
+        
+        <!-- Quality Control Calculators -->
+        <div class="category-title" data-ar="حسابات مراقبة الجودة" data-en="Quality Control Calculators">حسابات مراقبة الجودة</div>
+        <div class="calculators-grid">
+            <div class="calculator-card" onclick="openCalculator('chemical-composition')">
+                <div class="calculator-icon"><i class="fas fa-flask"></i></div>
+                <div class="calculator-title" data-ar="التركيب الكيميائي" data-en="Chemical Composition">التركيب الكيميائي</div>
+                <div class="calculator-description" data-ar="حساب التركيب الكيميائي للأسمنت مع مؤشر التشبع المعياري" data-en="Calculate cement chemical composition with standard saturation index">حساب التركيب الكيميائي للأسمنت مع مؤشر التشبع المعياري</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('fineness')">
+                <div class="calculator-icon"><i class="fas fa-search"></i></div>
+                <div class="calculator-title" data-ar="معامل النعومة" data-en="Fineness Modulus">معامل النعومة</div>
+                <div class="calculator-description" data-ar="حساب معامل نعومة الأسمنت بالطريقة البيانية" data-en="Calculate cement fineness modulus by Blaine method">حساب معامل نعومة الأسمنت بالطريقة البيانية</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('particle-size')">
+                <div class="calculator-icon"><i class="fas fa-sort-amount-up"></i></div>
+                <div class="calculator-title" data-ar="توزيع حجم الجسيمات" data-en="Particle Size Distribution">توزيع حجم الجسيمات</div>
+                <div class="calculator-description" data-ar="حساب توزيع حجم الجسيمات مع منحنيات التوزيع الاحترافية" data-en="Calculate particle size distribution with professional distribution curves">حساب توزيع حجم الجسيمات مع منحنيات التوزيع الاحترافية</div>
+            </div>
+        </div>
+        
+        <!-- Advanced Distribution Calculators -->
+        <div class="category-title" data-ar="حسابات التوزيع المتقدمة" data-en="Advanced Distribution Calculators">حسابات التوزيع المتقدمة</div>
+        <div class="calculators-grid">
+            <div class="calculator-card" onclick="openCalculator('tromp-curve')">
+                <div class="calculator-icon"><i class="fas fa-chart-area"></i></div>
+                <div class="calculator-title" data-ar="منحنى ترومب" data-en="Tromp Curve">منحنى ترومب</div>
+                <div class="calculator-description" data-ar="حساب وتحليل منحنى ترومب مع مؤشرات الكفاءة" data-en="Calculate and analyze Tromp curve with efficiency indicators">حساب وتحليل منحنى ترومب مع مؤشرات الكفاءة</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('rosin-rammler')">
+                <div class="calculator-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="calculator-title" data-ar="توزيع روزين-رامبر" data-en="Rosin-Rammler Distribution">توزيع روزين-رامبر</div>
+                <div class="calculator-description" data-ar="حساب توزيع روزين-رامبر مع مؤشرات الملاءمة" data-en="Calculate Rosin-Rammler distribution with fit indicators">حساب توزيع روزين-رامبر مع مؤشرات الملاءمة</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('gaudin-modes')">
+                <div class="calculator-icon"><i class="fas fa-ellipsis-h"></i></div>
+                <div class="calculator-title" data-ar="توزيع جودين-مودز" data-en="Gaudin-Modes Distribution">توزيع جودين-مودز</div>
+                <div class="calculator-description" data-ar="حساب توزيع جودين-مودز مع تحليل الانحراف المعياري" data-en="Calculate Gaudin-Modes distribution with standard deviation analysis">حساب توزيع جودين-مودز مع تحليل الانحراف المعياري</div>
+            </div>
+            
+            <div class="calculator-card" onclick="openCalculator('cement-strength')">
+                <div class="calculator-icon"><i class="fas fa-weight-hanging"></i></div>
+                <div class="calculator-title" data-ar="توقع قوة الأسمنت" data-en="Cement Strength Prediction">توقع قوة الأسمنت</div>
+                <div class="calculator-description" data-ar="توقع قوة الأسمنت مع تحليل عمر التصلب" data-en="Predict cement strength with curing age analysis">توقع قوة الأسمنت مع تحليل عمر التصلب</div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <h3 data-ar="تطوير وتمويل" data-en="Development & Funding">تطوير وتمويل</h3>
+            <p data-ar="النظام مطور بواسطة: السيد فادي م. درويش" data-en="System developed by: Mr. Fadi M. Darwesh">النظام مطور بواسطة: السيد فادي م. درويش</p>
+            <p data-ar="أخصائي الجودة والبحث والتطوير" data-en="Quality Control & R&D Specialist">أخصائي الجودة والبحث والتطوير</p>
+            <p data-ar="البريد الإلكتروني: asrar.cement@gmail.com" data-en="Email: asrar.cement@gmail.com">البريد الإلكتروني: asrar.cement@gmail.com</p>
+        </footer>
+    </div>
+
+    <script>
+        // Language switching functionality
+        let currentLanguage = 'ar';
+        
+        document.getElementById('lang-en').addEventListener('click', function() {
+            setLanguage('en');
+        });
+        
+        document.getElementById('lang-ar').addEventListener('click', function() {
+            setLanguage('ar');
+        });
+        
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update text content based on data attributes
+            document.querySelectorAll('[data-ar]').forEach(element => {
+                const text = lang === 'ar' ? element.getAttribute('data-ar') : element.getAttribute('data-en');
+                if (text) {
+                    element.textContent = text;
+                }
+            });
+            
+            // Update direction
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+        
+        function openCalculator(calculatorName) {
+            // Add loading animation to clicked card
+            const card = event.currentTarget;
+            const originalHTML = card.innerHTML;
+            card.style.pointerEvents = 'none';
+            card.innerHTML = '<div style="text-align: center; padding: 50px;"><i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--secondary);"></i><br><br><span style="color: var(--primary);">جاري التحميل...<br>Loading...</span></div>';
+            
+            // Map calculator names to their file names
+            const calculatorFiles = {
+                'critical-speed': 'critical-speed.html',
+                'power-consumption': 'power-consumption.html',
+                'ball-charge': 'ball-charge.html',
+                'mill-performance': 'mill-performance.html',
+                'separator-efficiency': 'separator-efficiency.html',
+                'separator-design': 'separator-design.html',
+                'flow-rate': 'flow-rate.html',
+                'kiln-design': 'kiln-design.html',
+                'fuel-consumption': 'fuel-consumption.html',
+                'heat-balance': 'heat-balance.html',
+                'chemical-composition': 'chemical-composition.html',
+                'fineness': 'fineness-modulus.html',
+                'particle-size': 'particle-size.html',
+                'tromp-curve': 'tromp-curve.html',
+                'rosin-rammler': 'rosin-rammler.html',
+                'gaudin-modes': 'gaudin-modes.html'
+            };
+            
+            const fileName = calculatorFiles[calculatorName];
+            
+            // Simulate loading time for better UX
+            setTimeout(() => {
+                if (fileName) {
+                    // Store current language and scroll position
+                    sessionStorage.setItem('currentLanguage', currentLanguage);
+                    sessionStorage.setItem('scrollPosition', window.pageYOffset);
+                    
+                    window.location.href = fileName;
+                } else {
+                    alert((currentLanguage === 'ar' ? 
+                        'الحاسبة غير متوفرة حالياً - سيتم توفيرها قريباً' : 
+                        'Calculator not available yet - will be available soon') + '\n\n' +
+                        (currentLanguage === 'ar' ? 
+                        'المطور: السيد فادي م. درويش' : 
+                        'Developer: Mr. Fadi M. Darwesh'));
+                    
+                    // Restore card
+                    card.innerHTML = originalHTML;
+                    card.style.pointerEvents = 'auto';
+                }
+            }, 500);
+        }
+        
+        // Initialize with Arabic
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restore previous language and scroll position if coming back
+            const savedLanguage = sessionStorage.getItem('currentLanguage');
+            const savedScrollPosition = sessionStorage.getItem('scrollPosition');
+            
+            if (savedLanguage) {
+                setLanguage(savedLanguage);
+            } else {
+                setLanguage('ar');
+            }
+            
+            // Splash screen logic
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                
+                // Restore scroll position after splash screen
+                if (savedScrollPosition) {
+                    setTimeout(() => {
+                        window.scrollTo(0, parseInt(savedScrollPosition));
+                        // Clear saved position
+                        sessionStorage.removeItem('scrollPosition');
+                    }, 100);
+                }
+            }, 2000); // 2-second splash screen
+            
+            // Add click animations to cards
+            document.querySelectorAll('.calculator-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'translateY(-5px) scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+            
+            // Add hover effects with enhanced animations
+            document.querySelectorAll('.calculator-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

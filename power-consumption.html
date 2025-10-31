@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة استهلاك الطاقة للطواحين - نظام أسمنت</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --info: #3498db;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* ====================================================== */
+        /* ==         🔥 SPLASH SCREEN STYLES 🔥              == */
+        /* ====================================================== */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        #splash-screen .loading-text {
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #splash-screen .preparing-text {
+            font-size: 16px;
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        #splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+
+        #splash-screen .loader {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* ====================================================== */
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .main-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .main-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .main-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+        
+        .back-button:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .lang-btn {
+            background: rgba(52, 152, 219, 0.2);
+            border: none;
+            color: var(--secondary);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .lang-btn.active {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .lang-btn:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .input-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .results-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+        }
+        
+        .unit-label {
+            color: #666;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+        
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .table-title {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: var(--light);
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        tr:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+        
+        .input-add-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .input-add-btn:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+        
+        .remove-row-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .footer p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .recommendations {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid var(--secondary);
+        }
+        
+        .recommendations h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .recommendations ul {
+            list-style: none;
+            padding-right: 0;
+        }
+        
+        .recommendations li {
+            padding: 5px 0;
+            position: relative;
+            padding-right: 20px;
+        }
+        
+        .recommendations li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: bold;
+            position: absolute;
+            right: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-title {
+                font-size: 32px;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .language-switcher, .back-button {
+                position: static;
+                margin-bottom: 20px;
+            }
+            
+            .back-button {
+                text-align: center;
+                display: block;
+            }
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .back-button, .language-switcher {
+                display: none;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="splash-screen">
+        <div>
+            <h1 data-ar="جاري تحميل الحاسبة... يرجى الانتظار" data-en="Loading Calculator... Please Wait">جاري تحميل الحاسبة... يرجى الانتظار</h1>
+            <p class="loading-text" data-ar="نحن نعد كل شيء لك ⚡" data-en="We are preparing everything for you ⚡">نحن نعد كل شيء لك ⚡</p>
+            <p data-ar="تطوير: السيد فادي م. درويش" data-en="Developed by: Mr. Fadi M. Darwesh">تطوير: السيد فادي م. درويش</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+    
+    <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-right"></i>
+        <span data-ar="العودة للقائمة الرئيسية" data-en="Back to Main">العودة للقائمة الرئيسية</span>
+    </a>
+    
+    <div class="language-switcher">
+        <button class="lang-btn active" id="lang-ar">العربية</button>
+        <button class="lang-btn" id="lang-en">English</button>
+    </div>
+    
+    <div class="container">
+        <header class="main-header">
+            <h1 class="main-title" data-ar="حاسبة استهلاك الطاقة لطواحين الأسمنت" data-en="Mill Power Consumption Calculator">حاسبة استهلاك الطاقة لطواحين الأسمنت</h1>
+            <p class="main-subtitle" data-ar="حساب دقيق لاستهلاك الطاقة مع تحليل الكفاءة والتحسين" data-en="Accurate power consumption calculation with efficiency analysis and optimization">حساب دقيق لاستهلاك الطاقة مع تحليل الكفاءة والتحسين</p>
+        </header>
+        
+        <div class="calculator-grid">
+            <!-- Input Section -->
+            <div class="input-section">
+                <h2 class="section-title" data-ar="معاملات طاقة الطاحونة" data-en="Mill Power Parameters">معاملات طاقة الطاحونة</h2>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="قطر الطاحونة (متر)" data-en="Mill Diameter (m)">قطر الطاحونة (متر)</label>
+                    <input type="number" class="input-field" id="millDiameter" step="0.01" min="0.1" placeholder="5.0">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="طول الطاحونة (متر)" data-en="Mill Length (m)">طول الطاحونة (متر)</label>
+                    <input type="number" class="input-field" id="millLength" step="0.01" min="0.1" placeholder="15.0">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="شحن الكرات (طن)" data-en="Ball Charge (tons)">شحن الكرات (طن)</label>
+                    <input type="number" class="input-field" id="ballCharge" step="0.1" min="0" placeholder="150">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="إنتاجية المواد (طن/ساعة)" data-en="Material Throughput (t/h)">إنتاجية المواد (طن/ساعة)</label>
+                    <input type="number" class="input-field" id="throughput" step="0.1" min="0.1" placeholder="250">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="مؤشر بوند للعملية" data-en="Bond Work Index">مؤشر بوند للعملية</label>
+                    <input type="number" class="input-field" id="bondWorkIndex" step="0.1" min="5" max="50" placeholder="15.0">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="كفاءة الطاحونة (%)" data-en="Mill Efficiency (%)">كفاءة الطاحونة (%)</label>
+                    <input type="number" class="input-field" id="millEfficiency" step="0.1" min="50" max="100" placeholder="85">
+                </div>
+                
+                <h3 class="section-title" style="font-size: 18px; margin-top: 30px;" data-ar="الإعدادات المستهدفة" data-en="Target Settings">الإعدادات المستهدفة</h3>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="استهلاك الطاقة المستهدف (كيلو واط ساعة/طن)" data-en="Target Power Consumption (kWh/ton)">استهلاك الطاقة المستهدف (كيلو واط ساعة/طن)</label>
+                    <input type="number" class="input-field" id="targetPowerConsumption" step="0.1" min="1" placeholder="30.0">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="الكفاءة المثلى (%)" data-en="Optimal Efficiency (%)">الكفاءة المثلى (%)</label>
+                    <input type="number" class="input-field" id="optimalEfficiency" step="0.1" min="70" max="100" placeholder="90">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-ar="هدف توفير الطاقة (%)" data-en="Energy Savings Target (%)">هدف توفير الطاقة (%)</label>
+                    <input type="number" class="input-field" id="energySavingsTarget" step="0.1" min="0" max="50" placeholder="15">
+                </div>
+                
+                <button class="calculate-btn" onclick="calculatePowerConsumption()" data-ar="حساب استهلاك الطاقة" data-en="Calculate Power Consumption">
+                    <i class="fas fa-calculator"></i>
+                    <span>حساب استهلاك الطاقة</span>
+                </button>
+                
+                <div class="recommendations" id="recommendations" style="display: none;">
+                    <h4 data-ar="توصيات التحسين" data-en="Optimization Recommendations">توصيات التحسين</h4>
+                    <ul id="recommendationsList"></ul>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section">
+                <h2 class="section-title" data-ar="نتائج الحسابات" data-en="Calculation Results">نتائج الحسابات</h2>
+                
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="powerPerTon">0</div>
+                        <div class="kpi-label" data-ar="استهلاك الطاقة (كيلو واط ساعة/طن)" data-en="Power Consumption (kWh/ton)">استهلاك الطاقة (كيلو واط ساعة/طن)</div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="totalPower">0</div>
+                        <div class="kpi-label" data-ar="الطاقة الإجمالية (كيلو واط)" data-en="Total Power (kW)">الطاقة الإجمالية (كيلو واط)</div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="energyEfficiency">0%</div>
+                        <div class="kpi-label" data-ar="كفاءة الطاقة (%)" data-en="Energy Efficiency (%)">كفاءة الطاقة (%)</div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="costPerTon">$0</div>
+                        <div class="kpi-label" data-ar="التكلفة للطن ($/طن)" data-en="Cost per Ton ($/ton)">التكلفة للطن ($/ton)</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title" data-ar="منحنى الطاقة مقابل الإنتاجية" data-en="Power vs Throughput Curve">منحنى الطاقة مقابل الإنتاجية</div>
+                    <canvas id="powerThroughputChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Tables -->
+        <div class="data-table">
+            <div class="table-title" data-ar="قياسات الطاقة" data-en="Power Measurements">قياسات الطاقة</div>
+            <div class="table-wrapper">
+                <table id="powerTable">
+                    <thead>
+                        <tr>
+                            <th data-ar="الوقت" data-en="Time">الوقت</th>
+                            <th data-ar="الطاقة (كيلو واط)" data-en="Power (kW)">الطاقة (كيلو واط)</th>
+                            <th data-ar="الإنتاجية (طن/ساعة)" data-en="Throughput (t/h)">الإنتاجية (طن/ساعة)</th>
+                            <th data-ar="استهلاك الطاقة (كيلو واط ساعة/طن)" data-en="Power Consumption (kWh/ton)">استهلاك الطاقة (كيلو واط ساعة/طن)</th>
+                            <th data-ar="الكفاءة (%)" data-en="Efficiency (%)">الكفاءة (%)</th>
+                            <th data-ar="الإجراءات" data-en="Actions">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="time" class="input-field" value="08:00"></td>
+                            <td><input type="number" class="input-field" placeholder="8500" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="250" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="34" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="85" step="0.1"></td>
+                            <td><button class="remove-row-btn" onclick="removeRow(this)">حذف</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="input-add-btn" onclick="addPowerRow()" data-ar="إضافة قياس جديد" data-en="Add New Measurement">إضافة قياس جديد</button>
+        </div>
+        
+        <div class="data-table">
+            <div class="table-title" data-ar="ظروف التشغيل" data-en="Operating Conditions">ظروف التشغيل</div>
+            <div class="table-wrapper">
+                <table id="conditionsTable">
+                    <thead>
+                        <tr>
+                            <th data-ar="المعلم" data-en="Parameter">المعلم</th>
+                            <th data-ar="القيمة الحالية" data-en="Current Value">القيمة الحالية</th>
+                            <th data-ar="القيمة المثلى" data-en="Optimal Value">القيمة المثلى</th>
+                            <th data-ar="الحالة" data-en="Status">الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-ar="سرعة الدوران (دورة/دقيقة)" data-en="Rotational Speed (RPM)">سرعة الدوران (دورة/دقيقة)</td>
+                            <td><input type="number" class="input-field" placeholder="16" step="0.1"></td>
+                            <td>18</td>
+                            <td><span class="status-warning">تحت المطلوب</span></td>
+                        </tr>
+                        <tr>
+                            <td data-ar="درجة الحرارة (درجة مئوية)" data-en="Temperature (°C)">درجة الحرارة (درجة مئوية)</td>
+                            <td><input type="number" class="input-field" placeholder="120" step="1"></td>
+                            <td>110-130</td>
+                            <td><span class="status-good">طبيعي</span></td>
+                        </tr>
+                        <tr>
+                            <td data-ar="الضغط (بار)" data-en="Pressure (bar)">الضغط (بار)</td>
+                            <td><input type="number" class="input-field" placeholder="2.5" step="0.1"></td>
+                            <td>2.0-3.0</td>
+                            <td><span class="status-good">طبيعي</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="data-table">
+            <div class="table-title" data-ar="خصائص المواد" data-en="Material Properties">خصائص المواد</div>
+            <div class="table-wrapper">
+                <table id="materialsTable">
+                    <thead>
+                        <tr>
+                            <th data-ar="نوع المادة" data-en="Material Type">نوع المادة</th>
+                            <th data-ar="الصلابة (بوند)" data-en="Hardness (Bond)">الصلابة (بوند)</th>
+                            <th data-ar="الكثافة (طن/متر مكعب)" data-en="Density (t/m³)">الكثافة (طن/متر مكعب)</th>
+                            <th data-ar="حجم الجسيمات (ميليمتر)" data-en="Particle Size (mm)">حجم الجسيمات (ميليمتر)</th>
+                            <th data-ar="الرطوبة (%)" data-en="Moisture (%)">الرطوبة (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-ar="كلنكر" data-en="Clinker">كلنكر</td>
+                            <td><input type="number" class="input-field" placeholder="15.0" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="3.1" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="25" step="1"></td>
+                            <td><input type="number" class="input-field" placeholder="0.5" step="0.1"></td>
+                        </tr>
+                        <tr>
+                            <td data-ar="حجر جيري" data-en="Limestone">حجر جيري</td>
+                            <td><input type="number" class="input-field" placeholder="10.0" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="2.7" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="20" step="1"></td>
+                            <td><input type="number" class="input-field" placeholder="2.0" step="0.1"></td>
+                        </tr>
+                        <tr>
+                            <td data-ar="رمل سيليسي" data-en="Silica Sand">رمل سيليسي</td>
+                            <td><input type="number" class="input-field" placeholder="12.0" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="2.6" step="0.1"></td>
+                            <td><input type="number" class="input-field" placeholder="15" step="1"></td>
+                            <td><input type="number" class="input-field" placeholder="1.0" step="0.1"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <h3 data-ar="تطوير وتمويل" data-en="Development & Funding">تطوير وتمويل</h3>
+            <p data-ar="النظام مطور بواسطة: السيد فادي م. درويش" data-en="System developed by: Mr. Fadi M. Darwesh">النظام مطور بواسطة: السيد فادي م. درويش</p>
+            <p data-ar="أخصائي الجودة والبحث والتطوير" data-en="Quality Control & R&D Specialist">أخصائي الجودة والبحث والتطوير</p>
+            <p data-ar="البريد الإلكتروني: asrar.cement@gmail.com" data-en="Email: asrar.cement@gmail.com">البريد الإلكتروني: asrar.cement@gmail.com</p>
+        </footer>
+    </div>
+
+    <script>
+        // Language switching functionality
+        let currentLanguage = 'ar';
+        let powerChart = null;
+        
+        document.getElementById('lang-en').addEventListener('click', function() {
+            setLanguage('en');
+        });
+        
+        document.getElementById('lang-ar').addEventListener('click', function() {
+            setLanguage('ar');
+        });
+        
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update text content based on data attributes
+            document.querySelectorAll('[data-ar]').forEach(element => {
+                const text = lang === 'ar' ? element.getAttribute('data-ar') : element.getAttribute('data-en');
+                if (text) {
+                    element.textContent = text;
+                }
+            });
+            
+            // Update direction
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+        
+        function calculatePowerConsumption() {
+            // Get input values
+            const millDiameter = parseFloat(document.getElementById('millDiameter').value) || 5.0;
+            const millLength = parseFloat(document.getElementById('millLength').value) || 15.0;
+            const ballCharge = parseFloat(document.getElementById('ballCharge').value) || 150;
+            const throughput = parseFloat(document.getElementById('throughput').value) || 250;
+            const bondWorkIndex = parseFloat(document.getElementById('bondWorkIndex').value) || 15.0;
+            const millEfficiency = parseFloat(document.getElementById('millEfficiency').value) || 85;
+            const targetPowerConsumption = parseFloat(document.getElementById('targetPowerConsumption').value) || 30.0;
+            const optimalEfficiency = parseFloat(document.getElementById('optimalEfficiency').value) || 90;
+            const energySavingsTarget = parseFloat(document.getElementById('energySavingsTarget').value) || 15;
+            
+            // Calculate mill volume
+            const millVolume = Math.PI * Math.pow(millDiameter / 2, 2) * millLength;
+            
+            // Calculate power consumption using Bond's equation
+            const theoreticalPower = 0.1 * millVolume * Math.sqrt(bondWorkIndex);
+            const actualPower = theoreticalPower * (millEfficiency / 100);
+            
+            // Calculate power per ton
+            const powerPerTon = actualPower / throughput;
+            
+            // Calculate energy efficiency
+            const energyEfficiency = (actualPower / theoreticalPower) * 100;
+            
+            // Calculate cost per ton (assuming $0.08 per kWh)
+            const electricityCost = 0.08; // $ per kWh
+            const costPerTon = powerPerTon * electricityCost;
+            
+            // Calculate total power
+            const totalPower = actualPower;
+            
+            // Update KPI cards
+            document.getElementById('powerPerTon').textContent = powerPerTon.toFixed(2);
+            document.getElementById('totalPower').textContent = totalPower.toFixed(0);
+            document.getElementById('energyEfficiency').textContent = energyEfficiency.toFixed(1) + '%';
+            document.getElementById('costPerTon').textContent = '$' + costPerTon.toFixed(2);
+            
+            // Update recommendations
+            updateRecommendations(powerPerTon, energyEfficiency, targetPowerConsumption, optimalEfficiency, millEfficiency);
+            
+            // Update chart
+            updateChart(throughput, powerPerTon, targetPowerConsumption);
+            
+            // Show recommendations section
+            document.getElementById('recommendations').style.display = 'block';
+        }
+        
+        function updateRecommendations(powerPerTon, energyEfficiency, targetPower, optimalEfficiency, currentEfficiency) {
+            const recommendationsList = document.getElementById('recommendationsList');
+            recommendationsList.innerHTML = '';
+            
+            const recommendations = [];
+            
+            if (powerPerTon > targetPower) {
+                recommendations.push(currentLanguage === 'ar' ? 
+                    `استهلاك الطاقة مرتفع بمقدار ${(powerPerTon - targetPower).toFixed(2)} كيلو واط ساعة/طن` :
+                    `Power consumption is ${(powerPerTon - targetPower).toFixed(2)} kWh/ton higher than target`);
+            }
+            
+            if (currentEfficiency < optimalEfficiency) {
+                recommendations.push(currentLanguage === 'ar' ?
+                    `تحسين الكفاءة من ${currentEfficiency.toFixed(1)}% إلى ${optimalEfficiency.toFixed(1)}% يمكن أن يوفر ${((powerPerTon * currentEfficiency) / optimalEfficiency - powerPerTon).toFixed(2)} كيلو واط ساعة/طن` :
+                    `Improving efficiency from ${currentEfficiency.toFixed(1)}% to ${optimalEfficiency.toFixed(1)}% can save ${((powerPerTon * currentEfficiency) / optimalEfficiency - powerPerTon).toFixed(2)} kWh/ton`);
+            }
+            
+            if (energyEfficiency < 80) {
+                recommendations.push(currentLanguage === 'ar' ?
+                    'كفاءة الطاقة منخفضة - فحص حالة الطاحونة وشحن الكرات' :
+                    'Low energy efficiency - check mill condition and ball charge');
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push(currentLanguage === 'ar' ?
+                    'الأداء ضمن المعايير المطلوبة' :
+                    'Performance is within required standards');
+            }
+            
+            recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                recommendationsList.appendChild(li);
+            });
+        }
+        
+        function updateChart(throughput, currentPower, targetPower) {
+            const ctx = document.getElementById('powerThroughputChart').getContext('2d');
+            
+            // Generate sample data for different throughput values
+            const throughputData = [];
+            const powerData = [];
+            const targetData = [];
+            
+            for (let i = Math.max(50, throughput - 100); i <= Math.min(500, throughput + 100); i += 25) {
+                throughputData.push(i);
+                // Simulate power consumption curve
+                powerData.push(30 + (200 / i) + Math.random() * 2);
+                targetData.push(targetPower);
+            }
+            
+            if (powerChart) {
+                powerChart.destroy();
+            }
+            
+            powerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: throughputData,
+                    datasets: [{
+                        label: currentLanguage === 'ar' ? 'استهلاك الطاقة الحالي' : 'Current Power Consumption',
+                        data: powerData,
+                        borderColor: 'rgb(52, 152, 219)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: currentLanguage === 'ar' ? 'الهدف المطلوب' : 'Target',
+                        data: targetData,
+                        borderColor: 'rgb(46, 204, 113)',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: currentLanguage === 'ar' ? 'استهلاك الطاقة (كيلو واط ساعة/طن)' : 'Power Consumption (kWh/ton)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: currentLanguage === 'ar' ? 'الإنتاجية (طن/ساعة)' : 'Throughput (t/h)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function addPowerRow() {
+            const table = document.getElementById('powerTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            const time = new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute:'2-digit'});
+            
+            newRow.innerHTML = `
+                <td><input type="time" class="input-field" value="${time}"></td>
+                <td><input type="number" class="input-field" placeholder="8500" step="0.1"></td>
+                <td><input type="number" class="input-field" placeholder="250" step="0.1"></td>
+                <td><input type="number" class="input-field" placeholder="34" step="0.1"></td>
+                <td><input type="number" class="input-field" placeholder="85" step="0.1"></td>
+                <td><button class="remove-row-btn" onclick="removeRow(this)">حذف</button></td>
+            `;
+        }
+        
+        function removeRow(btn) {
+            const row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+        
+        // Initialize with Arabic
+        document.addEventListener('DOMContentLoaded', function() {
+            // Splash screen logic
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 2000);
+            
+            // Set initial language
+            setLanguage('ar');
+            
+            // Initial calculation
+            setTimeout(calculatePowerConsumption, 2500);
+            
+            // Add style for status indicators
+            const style = document.createElement('style');
+            style.textContent = `
+                .status-good { color: var(--success); font-weight: 600; }
+                .status-warning { color: var(--warning); font-weight: 600; }
+                .status-error { color: var(--danger); font-weight: 600; }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+    <script src="./common.js"></script>
+</body>
+</html>

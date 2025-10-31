@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Size Distribution Calculator</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Additional custom styles for particle size calculator */
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .good { color: var(--success-color); }
+        .fair { color: var(--warning-color); }
+        .poor { color: var(--danger-color); }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .recommendations {
+            background: #fff9e6;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .ai-analysis {
+            background: #f0f8ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* Splash Screen Styles */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .splash-screen .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Print Header and Footer */
+        .print-header {
+            display: none;
+        }
+        
+        .print-footer {
+            display: none;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.75in;
+            }
+            
+            .print-header, .print-footer {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                background: white;
+                z-index: 100;
+                padding: 10px 0.75in;
+            }
+            
+            .print-header {
+                top: 0;
+                height: 70px;
+                border-bottom: 2px solid var(--primary-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10pt;
+            }
+            
+            .print-footer {
+                bottom: 0;
+                height: 30px;
+                border-top: 1px solid var(--border-color);
+                text-align: center;
+                font-size: 9pt;
+                color: var(--text-secondary);
+                line-height: 30px;
+            }
+            
+            body {
+                padding-top: 80px;
+                padding-bottom: 40px;
+                font-size: 12pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                page-break-inside: avoid;
+            }
+            
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Custom styles for this calculator */
+        .developer-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .developer-info h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .developer-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .api-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div>
+            <h1 data-en="Loading Calculator... Please Wait" data-ar="جاري تحميل الحاسبة... يرجى الانتظار">Loading Calculator... Please Wait</h1>
+            <p data-en="We're preparing everything for you ⚡" data-ar="نحن نعد كل شيء لك ⚡" style="margin-top: 15px; font-size: 16px; opacity: 0.9;">We're preparing everything for you ⚡</p>
+            <div class="loader" style="width: 80px; height: 80px;"></div>
+        </div>
+    </div>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <div>
+            <strong data-en="Particle Size Distribution Calculator" data-ar="حاسبة توزيع أحجام الجسيمات">Particle Size Distribution Calculator</strong>
+        </div>
+        <div>
+            <strong data-en="Confidential Report" data-ar="تقرير سري">Confidential Report</strong>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer">
+        <span data-en="Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com" data-ar="السيد فادي م. درويش - أخصائي ضمان الجودة والبحوث والتطوير - asrar.cement@gmail.com">Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com</span>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header no-print">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 data-en="Particle Size Distribution Calculator" data-ar="حاسبة توزيع أحجام الجسيمات">Particle Size Distribution Calculator</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="language-switch">
+                        <button class="lang-btn active" id="lang-en">English</button>
+                        <button class="lang-btn" id="lang-ar">العربية</button>
+                    </div>
+                </div>
+            </div>
+        <a href="index.html" class="back-btn" style="position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; z-index: 100;"><i class="fas fa-arrow-right"></i>العودة للرئيسية</a>
+</header>
+
+        <div class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 data-en="Advanced Particle Size Distribution Calculator" data-ar="حاسبة توزيع أحجام الجسيمات المتقدمة">Advanced Particle Size Distribution Calculator</h2>
+                    <p data-en="Comprehensive analysis tool for cement particle size distribution evaluation using sieve analysis and statistical calculations" data-ar="أداة شاملة لتحليل توزيع أحجام جسيمات الأسمنت باستخدام تحليل المناخل والحسابات الإحصائية">Comprehensive analysis tool for cement particle size distribution evaluation using sieve analysis and statistical calculations</p>
+                </div>
+            </section>
+
+            <!-- Company & Report Information -->
+            <div class="card">
+                <h2 class="section-title" data-en="Company & Report Information" data-ar="معلومات الشركة والتقرير">Company & Report Information</h2>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="company-name" data-en="Company Name" data-ar="اسم الشركة">Company Name</label>
+                        <input type="text" id="company-name" placeholder="Enter company name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-date" data-en="Report Date" data-ar="تاريخ التقرير">Report Date</label>
+                        <input type="date" id="report-date">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-preparer" data-en="Report Prepared By" data-ar="معد التقرير">Report Prepared By</label>
+                        <input type="text" id="report-preparer" placeholder="Enter preparer name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-position" data-en="Preparer Position" data-ar="منصب معد التقرير">Preparer Position</label>
+                        <input type="text" id="report-position" placeholder="Enter preparer position">
+                    </div>
+                    <div class="input-group">
+                        <label for="product-type" data-en="Product Type" data-ar="نوع المنتج">Product Type</label>
+                        <input type="text" id="product-type" placeholder="e.g., OPC, PPC, etc.">
+                    </div>
+                    <div class="input-group">
+                        <label for="production-date" data-en="Production Date" data-ar="تاريخ الإنتاج">Production Date</label>
+                        <input type="date" id="production-date">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PSD Parameters -->
+            <div class="card">
+                <h2 class="section-title" data-en="PSD Parameters" data-ar="معاملات توزيع أحجام الجسيمات">PSD Parameters</h2>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="sample-weight" data-en="Sample Weight (g)" data-ar="وزن العينة (جرام)">Sample Weight (g)</label>
+                        <input type="number" id="sample-weight" placeholder="Enter sample weight">
+                    </div>
+                    <div class="input-group">
+                        <label for="sieve-series" data-en="Sieve Series" data-ar="سلسلة المناخل">Sieve Series</label>
+                        <select id="sieve-series">
+                            <option value="" data-en="Select Sieve Series" data-ar="اختر سلسلة المناخل">Select Sieve Series</option>
+                            <option value="astm" data-en="ASTM E11" data-ar="ASTM E11">ASTM E11</option>
+                            <option value="iso" data-en="ISO 3310" data-ar="ISO 3310">ISO 3310</option>
+                            <option value="bs" data-en="BS 410" data-ar="BS 410">BS 410</option>
+                            <option value="din" data-en="DIN ISO 3310" data-ar="DIN ISO 3310">DIN ISO 3310</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="vibration-time" data-en="Sieve Shaking Time (min)" data-ar="وقت اهتزاز المنخل (دقيقة)">Sieve Shaking Time (min)</label>
+                        <input type="number" id="vibration-time" placeholder="Enter shaking time" min="1" max="60" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label for="material-density" data-en="Material Density (g/cm³)" data-ar="كثافة المادة (جرام/سم³)">Material Density (g/cm³)</label>
+                        <input type="number" id="material-density" placeholder="Enter density" step="0.01" min="0" value="3.15">
+                    </div>
+                    <div class="input-group">
+                        <label for="particle-shape" data-en="Particle Shape Factor" data-ar="عامل شكل الجسيمات">Particle Shape Factor</label>
+                        <input type="number" id="particle-shape" placeholder="Enter shape factor" step="0.01" min="0" value="1.0">
+                    </div>
+                    <div class="input-group">
+                        <label for="temperature" data-en="Test Temperature (°C)" data-ar="درجة حرارة الاختبار (مئوية)">Test Temperature (°C)</label>
+                        <input type="number" id="temperature" placeholder="Enter temperature">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Settings -->
+            <div class="card">
+                <h2 class="section-title" data-en="Target Settings" data-ar="إعدادات الأهداف المعتمدة">Target Settings</h2>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;" data-en="Set your factory's specific targets for particle size distribution evaluation." data-ar="حدد أهداف مصنعك الخاصة لتقييم توزيع أحجام الجسيمات.">Set your factory's specific targets for particle size distribution evaluation.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Parameter" data-ar="المعامل">Parameter</th>
+                            <th data-en="Target Value" data-ar="القيمة المستهدفة">Target Value</th>
+                            <th data-en="Unit" data-ar="الوحدة">Unit</th>
+                            <th data-en="Notes" data-ar="ملاحظات">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-en="Target d50" data-ar="الهدف d50">Target d50</td>
+                            <td><input type="number" id="target-d50" value="25" step="0.1"></td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="50% passing size" data-ar="حجم مرور 50%">50% passing size</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Target d90" data-ar="الهدف d90">Target d90</td>
+                            <td><input type="number" id="target-d90" value="45" step="0.1"></td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="90% passing size" data-ar="حجم مرور 90%">90% passing size</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Distribution Uniformity" data-ar="اتساق التوزيع">Distribution Uniformity</td>
+                            <td><input type="number" id="target-uniformity" value="1.8" step="0.1"></td>
+                            <td data-en="Index" data-ar="مؤشر">Index</td>
+                            <td data-en="d90/d10 ratio" data-ar="نسبة d90/d10">d90/d10 ratio</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Data Tables -->
+            <div class="card">
+                <h2 class="section-title" data-en="Sieve Analysis Data" data-ar="بيانات تحليل المناخل">Sieve Analysis Data</h2>
+                
+                <p style="text-align: center; margin: 15px 0; color: var(--text-secondary);" data-en="Enter retained weights and calculate cumulative passing percentages:" data-ar="أدخل الأوزان المحتجزة واحسب النسب المئوية التراكمية المارة:">Enter retained weights and calculate cumulative passing percentages:</p>
+                
+                <table class="data-table" id="sieve-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Sieve Size (μm)" data-ar="حجم المنخل (ميكرومتر)">Sieve Size (μm)</th>
+                            <th data-en="Retained Weight (g)" data-ar="الوزن المحتجز (جرام)">Retained Weight (g)</th>
+                            <th data-en="Retained (%)" data-ar="المحتجز (%)">Retained (%)</th>
+                            <th data-en="Cumulative Retained (%)" data-ar="المحتجز التراكمي (%)">Cumulative Retained (%)</th>
+                            <th data-en="Cumulative Pass (%)" data-ar="البارح التراكمي (%)">Cumulative Pass (%)</th>
+                            <th data-en="Actions" data-ar="الإجراءات">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sieve-table-body">
+                    </tbody>
+                </table>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" id="add-sieve-row" data-en="Add Sieve Size" data-ar="إضافة حجم منخل">Add Sieve Size</button>
+                    <button class="btn btn-secondary" id="add-default-sieves" data-en="Add Common Sieves" data-ar="إضافة المناخل الشائعة">Add Common Sieves</button>
+                    <button class="btn btn-warning" id="load-example" data-en="Load Example Data" data-ar="تحميل بيانات مثال">Load Example Data</button>
+                    <button class="btn btn-success" id="save-data" data-en="Save Data" data-ar="حفظ البيانات">Save Data</button>
+                    <button class="btn btn-secondary" id="load-data" data-en="Load Data" data-ar="تحميل البيانات">Load Data</button>
+                    <button class="btn btn-lg btn-primary" id="calculate-btn" data-en="Calculate Distribution" data-ar="حساب التوزيع">Calculate Distribution</button>
+                </div>
+            </div>
+
+            <!-- Mass Distribution Table -->
+            <div class="card">
+                <h2 class="section-title" data-en="Mass Distribution" data-ar="التوزيع الكتلي">Mass Distribution</h2>
+                <table class="data-table" id="mass-distribution-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Size Range (μm)" data-ar="نطاق الحجم (ميكرومتر)">Size Range (μm)</th>
+                            <th data-en="Mass Retained (g)" data-ar="الكتلة المحتجزة (جرام)">Mass Retained (g)</th>
+                            <th data-en="Mass %" data-ar="نسبة الكتلة %">Mass %</th>
+                            <th data-en="Cumulative Mass %" data-ar="الكتلة التراكمية %">Cumulative Mass %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mass-distribution-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Percentage Distribution Table -->
+            <div class="card">
+                <h2 class="section-title" data-en="Percentage Distribution" data-ar="التوزيع النسبي">Percentage Distribution</h2>
+                <table class="data-table" id="percentage-distribution-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Particle Size (μm)" data-ar="حجم الجسيم (ميكرومتر)">Particle Size (μm)</th>
+                            <th data-en="Frequency %" data-ar="التكرار %">Frequency %</th>
+                            <th data-en="Cumulative %" data-ar="التراكمي %">Cumulative %</th>
+                            <th data-en="Density Function" data-ar="دالة الكثافة">Density Function</th>
+                        </tr>
+                    </thead>
+                    <tbody id="percentage-distribution-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Statistical Parameters Table -->
+            <div class="card">
+                <h2 class="section-title" data-en="Statistical Parameters" data-ar="المعاملات الإحصائية">Statistical Parameters</h2>
+                <table class="data-table" id="stats-table">
+                    <thead>
+                        <tr>
+                            <th data-en="Parameter" data-ar="المعامل">Parameter</th>
+                            <th data-en="Value" data-ar="القيمة">Value</th>
+                            <th data-en="Unit" data-ar="الوحدة">Unit</th>
+                            <th data-en="Description" data-ar="الوصف">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body">
+                        <tr>
+                            <td data-en="d10 (10% passing)" data-ar="d10 (مرور 10%)">d10 (10% passing)</td>
+                            <td id="d10-value">-</td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="Particle size at 10% cumulative passing" data-ar="حجم الجسيم عند 10% مرور تراكمي">Particle size at 10% cumulative passing</td>
+                        </tr>
+                        <tr>
+                            <td data-en="d50 (50% passing)" data-ar="d50 (مرور 50%)">d50 (50% passing)</td>
+                            <td id="d50-value">-</td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="Median particle size" data-ar="متوسط حجم الجسيمات">Median particle size</td>
+                        </tr>
+                        <tr>
+                            <td data-en="d90 (90% passing)" data-ar="d90 (مرور 90%)">d90 (90% passing)</td>
+                            <td id="d90-value">-</td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="Particle size at 90% cumulative passing" data-ar="حجم الجسيم عند 90% مرور تراكمي">Particle size at 90% cumulative passing</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Uniformity Index" data-ar="مؤشر الاتساق">Uniformity Index</td>
+                            <td id="uniformity-value">-</td>
+                            <td data-en="Index" data-ar="مؤشر">Index</td>
+                            <td data-en="d90/d10 ratio" data-ar="نسبة d90/d10">d90/d10 ratio</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Specific Surface Area" data-ar="المساحة السطحية النوعية">Specific Surface Area</td>
+                            <td id="ssa-value">-</td>
+                            <td data-en="cm²/g" data-ar="سم²/جرام">cm²/g</td>
+                            <td data-en="Calculated from PSD using Kozeny-Carman equation" data-ar="محسوبة من PSD باستخدام معادلة كوزني كارمان">Calculated from PSD using Kozeny-Carman equation</td>
+                        </tr>
+                        <tr>
+                            <td data-en="Volume Mean Diameter" data-ar="متوسط القطر الحجمي">Volume Mean Diameter</td>
+                            <td id="vmd-value">-</td>
+                            <td data-en="μm" data-ar="ميكرومتر">μm</td>
+                            <td data-en="Mean diameter by volume" data-ar="متوسط القطر بالحجم">Mean diameter by volume</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="card">
+                <h2 class="section-title" data-en="Additional Notes" data-ar="ملاحظات إضافية">Additional Notes</h2>
+                <div class="input-group">
+                    <label for="additional-notes" data-en="Add your notes and observations here:" data-ar="أضف ملاحظاتك وتوصياتك هنا:">Add your notes and observations here:</label>
+                    <textarea id="additional-notes" rows="4" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-family: var(--font-arabic);" placeholder="Enter any additional notes, observations, or recommendations..."></textarea>
+                </div>
+                <small style="color: var(--text-secondary);" data-en="These notes will be included in the final report" data-ar="هذه الملاحظات ستظهر في التقرير النهائي">These notes will be included in the final report</small>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="results-section">
+                <div class="card">
+                    <h2 class="section-title" data-en="Particle Size Distribution Results" data-ar="نتائج توزيع أحجام الجسيمات">Particle Size Distribution Results</h2>
+                    
+                    <div class="grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <!-- KPI Cards -->
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="d50 (Median Size)" data-ar="d50 (الحجم المتوسط)">d50 (Median Size)</div>
+                            <div class="kpi-value" id="d50-kpi">-</div>
+                            <div class="kpi-label" id="d50-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="The median particle size at which 50% of the sample passes through the sieve. A key indicator of product fineness." data-ar="متوسط حجم الجسيمات الذي تمر عنده 50% من العينة عبر المنخل. مؤشر أساسي لنعومة المنتج."></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="d90 (Coarse Fraction)" data-ar="d90 (الكسر الخشن)">d90 (Coarse Fraction)</div>
+                            <div class="kpi-value" id="d90-kpi">-</div>
+                            <div class="kpi-label" id="d90-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="The particle size at which 90% of the sample passes. Indicates the maximum particle size in the fine product fraction." data-ar="حجم الجسيم الذي تمر عنده 90% من العينة. يشير إلى أقصى حجم جسيم في الكسر الناعم."></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Uniformity Index" data-ar="مؤشر الاتساق">Uniformity Index</div>
+                            <div class="kpi-value" id="uniformity-kpi">-</div>
+                            <div class="kpi-label" id="uniformity-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="The ratio d90/d10 measures distribution uniformity. Lower values indicate more uniform particle size distribution." data-ar="نسبة d90/d10 تقيس اتساق التوزيع. القيم الأقل تشير إلى توزيع أحجام جسيمات أكثر اتساقاً."></div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-label" data-en="Specific Surface Area" data-ar="المساحة السطحية النوعية">Specific Surface Area</div>
+                            <div class="kpi-value" id="ssa-kpi">-</div>
+                            <div class="kpi-label" id="ssa-status">-</div>
+                            <div class="kpi-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;" data-en="Calculated surface area per unit mass. Higher values indicate finer particles and better reactivity." data-ar="المساحة السطحية المحسوبة لكل وحدة كتلة. القيم الأعلى تشير إلى جسيمات أنعم وreactivity أفضل."></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="chart-container">
+                        <canvas id="psd-curve-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="histogram-chart"></canvas>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="recommendations">
+                        <h3 class="section-heading" data-en="Recommendations" data-ar="التوصيات">Recommendations</h3>
+                        <div id="recommendations-content"></div>
+                    </div>
+                    
+                    <div class="button-group no-print">
+                        <button class="btn btn-success" id="print-report" data-en="Print Report" data-ar="طباعة التقرير">Print Report</button>
+                        <button class="btn btn-warning" id="export-pdf" data-en="Export as PDF" data-ar="تصدير كـ PDF">Export as PDF</button>
+                        <button class="btn btn-secondary" id="new-analysis" data-en="New Analysis" data-ar="تحليل جديد">New Analysis</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="developer-info no-print">
+                <h3 data-en="System Developer" data-ar="مطور النظام">System Developer</h3>
+                <p><strong data-en="Mr. Fadi M. Darwesh" data-ar="السيد فادي م. درويش">Mr. Fadi M. Darwesh</strong></p>
+                <p data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</p>
+                <p>asrar.cement@gmail.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer no-print">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 data-en="Particle Size Distribution Calculator" data-ar="حاسبة توزيع أحجام الجسيمات">Particle Size Distribution Calculator</h4>
+                    <p data-en="Advanced calculation tools for cement particle size analysis" data-ar="أدوات حساب متقدمة لتحليل أحجام جسيمات الأسمنت">Advanced calculation tools for cement particle size analysis</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Developer" data-ar="المطور">Developer</h4>
+                    <ul>
+                        <li>Mr. Fadi M. Darwesh</li>
+                        <li data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</li>
+                        <li>asrar.cement@gmail.com</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-en="Features" data-ar="المميزات">Features</h4>
+                    <ul>
+                        <li data-en="Sieve Analysis" data-ar="تحليل المناخل">Sieve Analysis</li>
+                        <li data-en="Statistical Calculations" data-ar="الحسابات الإحصائية">Statistical Calculations</li>
+                        <li data-en="PSD Curves" data-ar="منحنيات PSD">PSD Curves</li>
+                        <li data-en="Professional Reports" data-ar="تقارير احترافية">Professional Reports</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--gray-700);">
+                <p data-en="© 2025 Cement Particle Size Distribution Calculator. All rights reserved." data-ar="© 2025 نظام حاسبة توزيع أحجام الجسيمات. جميع الحقوق محفوظة.">© 2025 Cement Particle Size Distribution Calculator. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-cog"></i>
+            <p data-en="Calculating..." data-ar="جاري الحساب...">Calculating...</p>
+        </div>
+    </div>
+
+    <script>
+        // Language switching functionality
+        document.getElementById('lang-en').addEventListener('click', function() {
+            setLanguage('en');
+        });
+        
+        document.getElementById('lang-ar').addEventListener('click', function() {
+            setLanguage('ar');
+        });
+        
+        function setLanguage(lang) {
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update text content based on data attributes
+            document.querySelectorAll('[data-en]').forEach(element => {
+                if (lang === 'en') {
+                    element.textContent = element.getAttribute('data-en');
+                } else {
+                    element.textContent = element.getAttribute('data-ar');
+                }
+            });
+            
+            // Update placeholders
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
+                const enText = element.getAttribute('data-en-placeholder');
+                const arText = element.getAttribute('data-ar-placeholder');
+                
+                if (enText && arText) {
+                    element.placeholder = lang === 'en' ? enText : arText;
+                }
+            });
+            
+            // Update direction
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+        
+        // Initialize with English
+        setLanguage('en');
+        
+        // Initialize splash screen
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 2000);
+            
+            // Set current dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('report-date').value = today;
+            document.getElementById('production-date').value = today;
+            
+            // Initialize with common sieves
+            addSieveRow(1);
+            addSieveRow(2);
+            addSieveRow(4);
+            addSieveRow(8);
+            addSieveRow(16);
+            addSieveRow(24);
+            addSieveRow(32);
+            addSieveRow(48);
+            addSieveRow(64);
+            addSieveRow(96);
+            addSieveRow(200);
+        });
+
+        function addSieveRow(defaultSize = '') {
+            const tableBody = document.getElementById('sieve-table-body');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td>
+                    <input type="number" step="0.1" min="0.1" class="sieve-size-input" value="${defaultSize}" placeholder="Enter size">
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0" class="retained-weight-input" placeholder="Enter weight">
+                </td>
+                <td>
+                    <span class="retained-percent">0.00%</span>
+                </td>
+                <td>
+                    <span class="cumulative-retained">0.00%</span>
+                </td>
+                <td>
+                    <span class="cumulative-pass">100.00%</span>
+                </td>
+                <td>
+                    <button class="btn btn-danger remove-row" data-en="Remove" data-ar="إزالة">Remove</button>
+                </td>
+            `;
+            
+            tableBody.appendChild(newRow);
+            
+            const weightInput = newRow.querySelector('.retained-weight-input');
+            weightInput.addEventListener('input', function() {
+                updatePercentages();
+            });
+            
+            newRow.querySelector('.remove-row').addEventListener('click', function() {
+                if (tableBody.children.length > 1) {
+                    tableBody.removeChild(newRow);
+                    updatePercentages();
+                } else {
+                    alert('You must have at least one sieve size!');
+                }
+            });
+            
+            updatePercentages();
+        }
+
+        function sieveSizeExists(size) {
+            const inputs = document.querySelectorAll('.sieve-size-input');
+            for (let input of inputs) {
+                if (parseFloat(input.value) === size) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Calculate percentage
+        function updatePercentages() {
+            const rows = document.querySelectorAll('#sieve-table-body tr');
+            const weights = [];
+            let totalWeight = 0;
+            
+            // Collect weights
+            rows.forEach(row => {
+                const weight = parseFloat(row.querySelector('.retained-weight-input').value) || 0;
+                weights.push(weight);
+                totalWeight += weight;
+            });
+            
+            // Calculate percentages
+            let cumulativeRetained = 0;
+            rows.forEach((row, index) => {
+                const weight = weights[index];
+                const retainedPercent = totalWeight > 0 ? (weight / totalWeight) * 100 : 0;
+                cumulativeRetained += retainedPercent;
+                const cumulativePass = 100 - cumulativeRetained;
+                
+                row.querySelector('.retained-percent').textContent = retainedPercent.toFixed(2) + '%';
+                row.querySelector('.cumulative-retained').textContent = cumulativeRetained.toFixed(2) + '%';
+                row.querySelector('.cumulative-pass').textContent = cumulativePass.toFixed(2) + '%';
+            });
+        }
+
+        // Calculate distribution
+        document.getElementById('calculate-btn').addEventListener('click', function() {
+            calculateDistribution();
+        });
+
+        function calculateDistribution() {
+            const sieveData = collectSieveData();
+            
+            if (sieveData.sieveSizes.length === 0) {
+                alert('Please enter at least one sieve size with data!');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
+            // Simulate calculation delay
+            setTimeout(() => {
+                const results = performPSDCalculations(sieveData);
+                
+                if (!results) {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                    return;
+                }
+                
+                document.getElementById('loading-overlay').classList.add('hidden');
+                displayResults(results);
+                document.getElementById('results-section').style.display = 'block';
+            }, 1000);
+        }
+
+        // Collect sieve data
+        function collectSieveData() {
+            const sieveData = {
+                sieveSizes: [],
+                weights: [],
+                cumulativePass: []
+            };
+            
+            const rows = document.querySelectorAll('#sieve-table-body tr');
+            rows.forEach(row => {
+                const sizeInput = row.querySelector('.sieve-size-input');
+                const weightInput = row.querySelector('.retained-weight-input');
+                const cumulativePassElement = row.querySelector('.cumulative-pass');
+                
+                if (sizeInput && weightInput && cumulativePassElement) {
+                    const size = parseFloat(sizeInput.value);
+                    const weight = parseFloat(weightInput.value);
+                    const cumulativePass = parseFloat(cumulativePassElement.textContent.replace('%', ''));
+                    
+                    if (!isNaN(size) && size > 0 && !isNaN(weight) && weight > 0 && !isNaN(cumulativePass)) {
+                        sieveData.sieveSizes.push(size);
+                        sieveData.weights.push(weight);
+                        sieveData.cumulativePass.push(cumulativePass);
+                    }
+                }
+            });
+            
+            // Sort by sieve size (ascending)
+            const combined = sieveData.sieveSizes.map((size, index) => ({
+                size,
+                weight: sieveData.weights[index],
+                cumulativePass: sieveData.cumulativePass[index]
+            }));
+            
+            combined.sort((a, b) => a.size - b.size);
+            
+            sieveData.sieveSizes = combined.map(item => item.size);
+            sieveData.weights = combined.map(item => item.weight);
+            sieveData.cumulativePass = combined.map(item => item.cumulativePass);
+            
+            return sieveData;
+        }
+
+        function interpolateSize(targetValue, value1, value2, size1, size2) {
+            if (value2 - value1 === 0) {
+                return size1;
+            }
+            const logSize1 = Math.log(size1);
+            const logSize2 = Math.log(size2);
+            const interpLog = logSize1 + (targetValue - value1) * (logSize2 - logSize1) / (value2 - value1);
+            return Math.exp(interpLog);
+        }
+
+        function performPSDCalculations(sieveData) {
+            // Calculate d10, d50, d90
+            let d10 = null, d50 = null, d90 = null;
+            
+            for (let i = 0; i < sieveData.cumulativePass.length - 1; i++) {
+                const currPass = sieveData.cumulativePass[i];
+                const nextPass = sieveData.cumulativePass[i + 1];
+                const currSize = sieveData.sieveSizes[i];
+                const nextSize = sieveData.sieveSizes[i + 1];
+                
+                if (d10 === null && currPass <= 10 && nextPass >= 10) {
+                    d10 = interpolateSize(10, currPass, nextPass, currSize, nextSize);
+                }
+                if (d50 === null && currPass <= 50 && nextPass >= 50) {
+                    d50 = interpolateSize(50, currPass, nextPass, currSize, nextSize);
+                }
+                if (d90 === null && currPass <= 90 && nextPass >= 90) {
+                    d90 = interpolateSize(90, currPass, nextPass, currSize, nextSize);
+                }
+            }
+            
+            const uniformityIndex = (d10 && d90) ? d90 / d10 : null;
+            
+            // Calculate Specific Surface Area (simplified calculation)
+            let ssa = null;
+            if (d50) {
+                // Simplified SSA calculation based on median size
+                ssa = 3000 / d50; // Simplified formula
+            }
+            
+            // Calculate Volume Mean Diameter
+            let vmd = null;
+            if (sieveData.sieveSizes.length > 0 && sieveData.weights.length > 0) {
+                let sum = 0;
+                let totalWeight = sieveData.weights.reduce((a, b) => a + b, 0);
+                for (let i = 0; i < sieveData.sieveSizes.length; i++) {
+                    sum += sieveData.sieveSizes[i] * sieveData.weights[i];
+                }
+                vmd = totalWeight > 0 ? sum / totalWeight : null;
+            }
+            
+            return {
+                d10,
+                d50,
+                d90,
+                uniformityIndex,
+                ssa,
+                vmd,
+                sieveSizes: sieveData.sieveSizes,
+                cumulativePass: sieveData.cumulativePass,
+                weights: sieveData.weights
+            };
+        }
+
+        function setStatusIndicator(metric, value, targetValue, lowerIsBetter = false) {
+            const statusElement = document.getElementById(`${metric}-status`);
+            let status, statusClass;
+            
+            if (value === null || typeof value === 'undefined' || isNaN(value)) {
+                statusElement.textContent = 'N/A';
+                statusElement.className = 'kpi-label';
+                return;
+            }
+
+            if (lowerIsBetter) {
+                if (value <= targetValue * 1.1) {
+                    status = 'Good';
+                    statusClass = 'good';
+                } else if (value <= targetValue * 1.2) {
+                    status = 'Fair';
+                    statusClass = 'fair';
+                } else {
+                    status = 'Poor';
+                    statusClass = 'poor';
+                }
+            } else {
+                if (value >= targetValue * 0.9) {
+                    status = 'Good';
+                    statusClass = 'good';
+                } else if (value >= targetValue * 0.8) {
+                    status = 'Fair';
+                    statusClass = 'fair';
+                } else {
+                    status = 'Poor';
+                    statusClass = 'poor';
+                }
+            }
+            
+            statusElement.textContent = status;
+            statusElement.className = 'kpi-label ' + statusClass;
+        }
+
+        function displayResults(results) {
+            // Update KPI values
+            document.getElementById('d10-value').textContent = results.d10 ? results.d10.toFixed(2) : 'N/A';
+            document.getElementById('d50-value').textContent = results.d50 ? results.d50.toFixed(2) : 'N/A';
+            document.getElementById('d90-value').textContent = results.d90 ? results.d90.toFixed(2) : 'N/A';
+            document.getElementById('uniformity-value').textContent = results.uniformityIndex ? results.uniformityIndex.toFixed(2) : 'N/A';
+            document.getElementById('ssa-value').textContent = results.ssa ? results.ssa.toFixed(2) : 'N/A';
+            document.getElementById('vmd-value').textContent = results.vmd ? results.vmd.toFixed(2) : 'N/A';
+            
+            document.getElementById('d50-kpi').textContent = results.d50 ? results.d50.toFixed(2) + ' μm' : 'N/A';
+            document.getElementById('d90-kpi').textContent = results.d90 ? results.d90.toFixed(2) + ' μm' : 'N/A';
+            document.getElementById('uniformity-kpi').textContent = results.uniformityIndex ? results.uniformityIndex.toFixed(2) : 'N/A';
+            document.getElementById('ssa-kpi').textContent = results.ssa ? results.ssa.toFixed(2) + ' cm²/g' : 'N/A';
+            
+            // Set status indicators
+            const target_d50 = parseFloat(document.getElementById('target-d50').value) || 25;
+            const target_d90 = parseFloat(document.getElementById('target-d90').value) || 45;
+            const target_uniformity = parseFloat(document.getElementById('target-uniformity').value) || 1.8;
+            
+            setStatusIndicator('d50', results.d50, target_d50, true);
+            setStatusIndicator('d90', results.d90, target_d90, true);
+            setStatusIndicator('uniformity', results.uniformityIndex, target_uniformity, true);
+            setStatusIndicator('ssa', results.ssa, 120, false);
+
+            // Update distribution tables
+            updateDistributionTables(results);
+            
+            generateCharts(results);
+            generateRecommendations(results);
+        }
+
+        function updateDistributionTables(results) {
+            // Update Mass Distribution Table
+            const massTableBody = document.getElementById('mass-distribution-body');
+            massTableBody.innerHTML = '';
+            
+            for (let i = 0; i < results.sieveSizes.length; i++) {
+                const row = document.createElement('tr');
+                const size = results.sieveSizes[i];
+                const weight = results.weights[i];
+                const massPercent = (weight / results.weights.reduce((a, b) => a + b, 0)) * 100;
+                const cumulativeMass = results.cumulativePass[i];
+                
+                row.innerHTML = `
+                    <td>${size.toFixed(1)} - ${i < results.sieveSizes.length - 1 ? results.sieveSizes[i + 1].toFixed(1) : '∞'}</td>
+                    <td>${weight.toFixed(2)}</td>
+                    <td>${massPercent.toFixed(2)}%</td>
+                    <td>${cumulativeMass.toFixed(2)}%</td>
+                `;
+                massTableBody.appendChild(row);
+            }
+            
+            // Update Percentage Distribution Table
+            const percentTableBody = document.getElementById('percentage-distribution-body');
+            percentTableBody.innerHTML = '';
+            
+            for (let i = 0; i < results.sieveSizes.length; i++) {
+                const row = document.createElement('tr');
+                const size = results.sieveSizes[i];
+                const cumulative = results.cumulativePass[i];
+                const frequency = i > 0 ? (results.cumulativePass[i - 1] - results.cumulativePass[i]) : (100 - results.cumulativePass[i]);
+                
+                row.innerHTML = `
+                    <td>${size.toFixed(1)}</td>
+                    <td>${Math.abs(frequency).toFixed(2)}%</td>
+                    <td>${cumulative.toFixed(2)}%</td>
+                    <td>${(frequency / (results.sieveSizes[i + 1] - size || 1)).toFixed(4)}</td>
+                `;
+                percentTableBody.appendChild(row);
+            }
+        }
+
+        function generateCharts(results) {
+            // PSD Curve Chart
+            const psdCtx = document.getElementById('psd-curve-chart').getContext('2d');
+            
+            if (window.psdChart) {
+                window.psdChart.destroy();
+            }
+            
+            window.psdChart = new Chart(psdCtx, {
+                type: 'line',
+                data: {
+                    labels: results.sieveSizes.map(size => size.toString()),
+                    datasets: [{
+                        label: 'Cumulative % Passing',
+                        data: results.cumulativePass,
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Particle Size (μm)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Cumulative % Passing'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Particle Size Distribution Curve'
+                        }
+                    }
+                }
+            });
+            
+            // Histogram Chart
+            const histCtx = document.getElementById('histogram-chart').getContext('2d');
+            
+            if (window.histChart) {
+                window.histChart.destroy();
+            }
+            
+            // Calculate frequency distribution
+            const totalWeight = results.weights.reduce((a, b) => a + b, 0);
+            const frequencies = results.weights.map(w => totalWeight > 0 ? (w / totalWeight) * 100 : 0);
+            
+            window.histChart = new Chart(histCtx, {
+                type: 'bar',
+                data: {
+                    labels: results.sieveSizes.map(size => size.toString()),
+                    datasets: [{
+                        label: 'Retained %',
+                        data: frequencies,
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Particle Size (μm)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Retained %'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Particle Size Distribution Histogram'
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateRecommendations(results) {
+            let recommendations = '';
+            
+            const target_d50 = parseFloat(document.getElementById('target-d50').value) || 25;
+            const target_d90 = parseFloat(document.getElementById('target-d90').value) || 45;
+            const target_uniformity = parseFloat(document.getElementById('target-uniformity').value) || 1.8;
+
+            if (results.d50 && results.d50 > target_d50 * 1.1) {
+                recommendations += `<p data-en="• Median particle size (d50) is above target (${target_d50}μm). Consider adjusting mill operation for finer grind." data-ar="• متوسط حجم الجسيمات (d50) أعلى من الهدف (${target_d50}ميكرومتر). فكر في تعديل تشغيل المطحنة لطحن أنعم.">• Median particle size (d50) is above target (${target_d50}μm). Consider adjusting mill operation for finer grind.</p>`;
+            } else if (results.d50 && results.d50 < target_d50 * 0.9) {
+                recommendations += `<p data-en="• Median particle size (d50) is below target (${target_d50}μm). Product is finer than required." data-ar="• متوسط حجم الجسيمات (d50) أقل من الهدف (${target_d50}ميكرومتر). المنتج أنعم من المطلوب.">• Median particle size (d50) is below target (${target_d50}μm). Product is finer than required.</p>`;
+            }
+            
+            if (results.uniformityIndex && results.uniformityIndex > target_uniformity * 1.2) {
+                recommendations += `<p data-en="• Distribution uniformity is poor (${results.uniformityIndex.toFixed(2)}). Check grinding efficiency and separator performance." data-ar="• اتساق التوزيع ضعيف (${results.uniformityIndex.toFixed(2)}). تحقق من كفاءة الطحن وأداء المصنف.">• Distribution uniformity is poor (${results.uniformityIndex.toFixed(2)}). Check grinding efficiency and separator performance.</p>`;
+            }
+            
+            recommendations += '<p data-en="• Monitor particle size distribution regularly to ensure consistent product quality." data-ar="• راقب توزيع أحجام الجسيمات بانتظام لضمان جودة منتج متسقة.">• Monitor particle size distribution regularly to ensure consistent product quality.</p>';
+            recommendations += '<p data-en="• Maintain proper sieve calibration and cleaning procedures." data-ar="• حافظ على معايرة المناخل وإجراءات التنظيف المناسبة.">• Maintain proper sieve calibration and cleaning procedures.</p>';
+            recommendations += '<p data-en="• Record environmental conditions (temperature, humidity) during testing." data-ar="• سجل ظروف البيئة (درجة الحرارة، الرطوبة) أثناء الاختبار.">• Record environmental conditions (temperature, humidity) during testing.</p>';
+            
+            document.getElementById('recommendations-content').innerHTML = recommendations;
+        }
+        
+        // Button event listeners
+        document.getElementById('add-sieve-row').addEventListener('click', function() {
+            addSieveRow();
+        });
+        
+        document.getElementById('add-default-sieves').addEventListener('click', function() {
+            const commonSizes = [1, 2, 4, 8, 16, 24, 32, 48, 64, 96, 200];
+            commonSizes.forEach(size => {
+                if (!sieveSizeExists(size)) {
+                    addSieveRow(size);
+                }
+            });
+        });
+        
+        document.getElementById('print-report').addEventListener('click', function() {
+            window.print();
+        });
+        
+        document.getElementById('new-analysis').addEventListener('click', function() {
+            document.getElementById('results-section').style.display = 'none';
+        });
+
+        // Save/Load Data functions
+        document.getElementById('save-data').addEventListener('click', function() {
+            const sieveData = collectSieveData();
+            const info = {
+                companyName: document.getElementById('company-name').value || '',
+                reportDate: document.getElementById('report-date').value || '',
+                preparedBy: document.getElementById('report-preparer').value || '',
+                position: document.getElementById('report-position').value || '',
+                productType: document.getElementById('product-type').value || '',
+                productionDate: document.getElementById('production-date').value || '',
+                sampleWeight: document.getElementById('sample-weight').value || '',
+                sieveSeries: document.getElementById('sieve-series').value || '',
+                vibrationTime: document.getElementById('vibration-time').value || '',
+                sampleType: document.getElementById('sample-type').value || '',
+                temperature: document.getElementById('temperature').value || '',
+                humidity: document.getElementById('humidity').value || '',
+                notes: document.getElementById('additional-notes').value || ''
+            };
+            
+            if (sieveData.sieveSizes.length === 0) {
+                alert('No particle size data to save.');
+                return;
+            }
+            
+            const saveObj = { sieveData: sieveData, generalInfo: info };
+            try {
+                localStorage.setItem('particleSizeSavedData', JSON.stringify(saveObj));
+                alert('Data saved successfully!');
+            } catch (e) {
+                alert('Unable to save data: ' + e.message);
+            }
+        });
+        
+        document.getElementById('load-data').addEventListener('click', function() {
+            const saved = localStorage.getItem('particleSizeSavedData');
+            if (!saved) {
+                alert('No saved data found.');
+                return;
+            }
+            try {
+                const data = JSON.parse(saved);
+                // Populate general info
+                if (data.generalInfo) {
+                    document.getElementById('company-name').value = data.generalInfo.companyName || '';
+                    document.getElementById('report-date').value = data.generalInfo.reportDate || '';
+                    document.getElementById('report-preparer').value = data.generalInfo.preparedBy || '';
+                    document.getElementById('report-position').value = data.generalInfo.position || '';
+                    document.getElementById('product-type').value = data.generalInfo.productType || '';
+                    document.getElementById('production-date').value = data.generalInfo.productionDate || '';
+                    document.getElementById('sample-weight').value = data.generalInfo.sampleWeight || '';
+                    document.getElementById('sieve-series').value = data.generalInfo.sieveSeries || '';
+                    document.getElementById('vibration-time').value = data.generalInfo.vibrationTime || '';
+                    document.getElementById('sample-type').value = data.generalInfo.sampleType || '';
+                    document.getElementById('temperature').value = data.generalInfo.temperature || '';
+                    document.getElementById('humidity').value = data.generalInfo.humidity || '';
+                    document.getElementById('additional-notes').value = data.generalInfo.notes || '';
+                }
+                // Populate sieve table
+                const tbody = document.getElementById('sieve-table-body');
+                tbody.innerHTML = '';
+                if (data.sieveData && data.sieveData.sieveSizes) {
+                    data.sieveData.sieveSizes.forEach(() => {
+                        addSieveRow();
+                    });
+                    const rows = document.querySelectorAll('#sieve-table-body tr');
+                    rows.forEach((row, idx) => {
+                        const inputs = row.querySelectorAll('input');
+                        if (inputs.length >= 2) {
+                            inputs[0].value = data.sieveData.sieveSizes[idx] !== undefined ? data.sieveData.sieveSizes[idx] : '';
+                            inputs[1].value = data.sieveData.weights[idx] !== undefined ? data.sieveData.weights[idx] : '';
+                        }
+                    });
+                    updatePercentages();
+                }
+                alert('Saved data loaded successfully.');
+            } catch (e) {
+                alert('Error loading saved data: ' + e.message);
+            }
+        });
+        
+        document.getElementById('load-example').addEventListener('click', function() {
+            // Clear existing data
+            document.getElementById('sieve-table-body').innerHTML = '';
+            
+            // Example data
+            const exampleData = [
+                { size: 1, weight: 0.5 },
+                { size: 2, weight: 0.8 },
+                { size: 4, weight: 1.2 },
+                { size: 8, weight: 1.8 },
+                { size: 16, weight: 2.5 },
+                { size: 24, weight: 3.0 },
+                { size: 32, weight: 3.5 },
+                { size: 48, weight: 4.2 },
+                { size: 64, weight: 3.8 },
+                { size: 96, weight: 2.5 },
+                { size: 200, weight: 1.2 }
+            ];
+            
+            exampleData.forEach(data => {
+                addSieveRow(data.size);
+                const rows = document.querySelectorAll('#sieve-table-body tr');
+                const lastRow = rows[rows.length - 1];
+                const weightInput = lastRow.querySelector('.retained-weight-input');
+                weightInput.value = data.weight;
+            });
+            
+            updatePercentages();
+            
+            // Fill form fields
+            document.getElementById('company-name').value = 'Asrar Cement Company';
+            document.getElementById('report-preparer').value = 'Engineer Ali Ahmed';
+            document.getElementById('report-position').value = 'Process Engineer';
+            document.getElementById('product-type').value = 'OPC';
+            document.getElementById('sample-weight').value = '100';
+            document.getElementById('sieve-series').value = 'astm';
+            document.getElementById('vibration-time').value = '10';
+            document.getElementById('sample-type').value = 'OPC';
+            document.getElementById('temperature').value = '25';
+            document.getElementById('humidity').value = '60';
+            document.getElementById('additional-notes').value = '• Monitor PSD regularly during production\n• Check sieve calibration monthly\n• Maintain consistent sample preparation\n• Record all environmental conditions';
+            
+            alert('Example data loaded successfully! Click "Calculate Distribution" to see results.');
+        });
+    </script>
+    <script src="./common.js"></script>
+</body>
+</html>

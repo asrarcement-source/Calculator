@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosin-Rammler Distribution Calculator</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Additional custom styles for Rosin-Rammler calculator */
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .good { color: var(--success-color); }
+        .fair { color: var(--warning-color); }
+        .poor { color: var(--danger-color); }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .recommendations {
+            background: #fff9e6;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .ai-analysis {
+            background: #f0f8ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* Splash Screen Styles */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .splash-screen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .splash-screen p {
+            font-size: 18px;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .splash-screen .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Print Header and Footer */
+        .print-header {
+            display: none;
+        }
+        
+        .print-footer {
+            display: none;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.75in;
+            }
+            
+            .print-header, .print-footer {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                background: white;
+                z-index: 100;
+                padding: 10px 0.75in;
+            }
+            
+            .print-header {
+                top: 0;
+                height: 70px;
+                border-bottom: 2px solid var(--primary-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10pt;
+            }
+            
+            .print-footer {
+                bottom: 0;
+                height: 30px;
+                border-top: 1px solid var(--border-color);
+                text-align: center;
+                font-size: 9pt;
+                color: var(--text-secondary);
+                line-height: 30px;
+            }
+            
+            body {
+                padding-top: 80px;
+                padding-bottom: 40px;
+                font-size: 12pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                page-break-inside: avoid;
+            }
+            
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Custom styles for this calculator */
+        .developer-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .developer-info h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .developer-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .api-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div>
+            <h1 data-en="Loading Calculator... Please Wait" data-ar="جاري تحميل الحاسبة... يرجى الانتظار">Loading Calculator... Please Wait</h1>
+            <p data-en="We're preparing everything for you ⚡" data-ar="نحن نعد كل شيء لك ⚡" style="margin-top: 15px; font-size: 16px; opacity: 0.9;">We're preparing everything for you ⚡</p>
+            <div class="loader" style="width: 80px; height: 80px;"></div>
+        </div>
+    </div>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <div>
+            <strong data-en="Rosin-Rammler Distribution Calculator" data-ar="حاسبة توزيع روزين-راميلر">Rosin-Rammler Distribution Calculator</strong>
+        </div>
+        <div>
+            <strong data-en="Confidential Report" data-ar="تقرير سري">Confidential Report</strong>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer">
+        <span data-en="Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com" data-ar="السيد فادي م. درويش - أخصائي ضمان الجودة والبحوث والتطوير - asrar.cement@gmail.com">Mr. Fadi M. Darwesh - QC & R&D Specialist - asrar.cement@gmail.com</span>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header no-print">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 data-en="Rosin-Rammler Distribution Calculator" data-ar="حاسبة توزيع روزين-راميلر">Rosin-Rammler Distribution Calculator</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="language-switch">
+                        <button class="lang-btn active" id="lang-en">English</button>
+                        <button class="lang-btn" id="lang-ar">العربية</button>
+                    </div>
+                </div>
+            </div>
+        <a href="index.html" class="back-btn" style="position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; z-index: 100;"><i class="fas fa-arrow-right"></i>العودة للرئيسية</a>
+</header>
+
+        <div class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 data-en="Rosin-Rammler Particle Size Distribution Calculator" data-ar="حاسبة توزيع أحجام جسيمات روزين-راميلر">Rosin-Rammler Particle Size Distribution Calculator</h2>
+                    <p data-en="حاسبة توزيع روزين-راميلر للجسيمات" data-ar="أداة شاملة لتحليل توزيع أحجام جسيمات الأسمنت باستخدام نموذج توزيع روزين-راميلر">حاسبة توزيع روزين-راميلر للجسيمات</p>
+                </div>
+            </section>
+
+            <!-- Company & Report Information -->
+            <div class="card">
+                <h2 class="section-title" data-en="Company & Report Information" data-ar="معلومات الشركة والتقرير">Company & Report Information</h2>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="company-name" data-en="Company Name" data-ar="اسم الشركة">Company Name</label>
+                        <input type="text" id="company-name" placeholder="Enter company name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-date" data-en="Report Date" data-ar="تاريخ التقرير">Report Date</label>
+                        <input type="date" id="report-date">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-preparer" data-en="Report Prepared By" data-ar="معد التقرير">Report Prepared By</label>
+                        <input type="text" id="report-preparer" placeholder="Enter preparer name">
+                    </div>
+                    <div class="input-group">
+                        <label for="report-position" data-en="Preparer Position" data-ar="منصب معد التقرير">Preparer Position</label>
+                        <input type="text" id="report-position" placeholder="Enter preparer position">
+                    </div>
+                    <div class="input-group">
+                        <label for="product-type" data-en="Product Type" data-ar="نوع المنتج">Product Type</label>
+                        <input type="text" id="product-type" placeholder="e.g., OPC, PPC, etc.">
+                    </div>
+                    <div class="input-group">
+                        <label for="batch-number" data-en="Batch/Lot Number" data-ar="رقم الدفعة/اللوت">Batch/Lot Number</label>
+                        <input type="text" id="batch-number" placeholder="Enter batch number">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rosin-Rammler Parameters -->
+            <div class="card">
+                <h2 class="section-title" data-en="Rosin-Rammler Parameters" data-ar="معايير روزين-راميلر">Rosin-Rammler Parameters</h2>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="characteristic-size" data-en="Characteristic Size (x₀) (μm)" data-ar="الحجم المميز (x₀) (ميكرو متر)">Characteristic Size (x₀) (μm)</label>
+                        <input type="number" id="characteristic-size" step="0.01" value="45" placeholder="Enter x₀">
+                    </div>
+                    <div class="input-group">
+                        <label for="uniformity-index" data-en="Uniformity Index (n)" data-ar="مؤشر التجانس (n)">Uniformity Index (n)</label>
+                        <input type="number" id="uniformity-index" step="0.01" value="1.2" placeholder="Enter n">
+                    </div>
+                    <div class="input-group">
+                        <label for="sample-weight" data-en="Sample Weight (g)" data-ar="وزن العينة (جرام)">Sample Weight (g)</label>
+                        <input type="number" id="sample-weight" step="0.01" value="100" placeholder="Enter weight">
+                    </div>
+                    <div class="input-group">
+                        <label for="num-sieves" data-en="Number of Sieves" data-ar="عدد المناخل">Number of Sieves</label>
+                        <input type="number" id="num-sieves" min="5" max="15" value="7" placeholder="5-15">
+                    </div>
+                    <div class="input-group">
+                        <label for="density" data-en="Density (g/cm³)" data-ar="الكثافة (جرام/سم³)">Density (g/cm³)</label>
+                        <input type="number" id="density" step="0.01" value="3.15" placeholder="Enter density">
+                    </div>
+                    <div class="input-group">
+                        <label for="shape-factor" data-en="Shape Factor" data-ar="عامل الشكل">Shape Factor</label>
+                        <input type="number" id="shape-factor" step="0.01" value="1.0" placeholder="Enter shape factor">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Settings -->
+            <div class="card">
+                <h2 class="section-title" data-en="Target Settings" data-ar="الإعدادات المستهدفة">Target Settings</h2>
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="target-x0" data-en="Target x₀ (μm)" data-ar="x₀ المستهدف (ميكرو متر)">Target x₀ (μm)</label>
+                        <input type="number" id="target-x0" step="0.01" value="40" placeholder="Enter target x₀">
+                    </div>
+                    <div class="input-group">
+                        <label for="target-n" data-en="Target Uniformity Index" data-ar="مؤشر التجانس المستهدف">Target Uniformity Index</label>
+                        <input type="number" id="target-n" step="0.01" value="1.0" placeholder="Enter target n">
+                    </div>
+                    <div class="input-group">
+                        <label for="accuracy-threshold" data-en="Size Distribution Accuracy" data-ar="دقة توزيع الحجم">Size Distribution Accuracy</label>
+                        <select id="accuracy-threshold">
+                            <option value="high">High (±2%)</option>
+                            <option value="medium" selected>Medium (±5%)</option>
+                            <option value="low">Low (±10%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sieve Analysis Data -->
+            <div class="card">
+                <h2 class="section-title" data-en="Sieve Analysis Data" data-ar="بيانات تحليل المناخل">Sieve Analysis Data</h2>
+                <div class="input-group">
+                    <label for="sieve-data" data-en="Sieve Data (comma separated: Sieve opening μm, Weight %)" data-ar="بيانات المناخل (مفصولة بفاصلة: فتحة المنخل ميكرومتر، النسبة المئوية بالوزن)">Sieve Data (comma separated: Sieve opening μm, Weight %)</label>
+                    <textarea id="sieve-data" rows="4" placeholder="Example: 150, 5.2; 75, 12.8; 45, 18.5; 32, 22.1; 16, 25.4; 8, 10.7; Bottom, 5.3">150, 5.2; 75, 12.8; 45, 18.5; 32, 22.1; 16, 25.4; 8, 10.7; Bottom, 5.3</textarea>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="calculateRosinRammler()" data-en="Calculate Rosin-Rammler Distribution" data-ar="حساب توزيع روزين-راميلر">Calculate Rosin-Rammler Distribution</button>
+                <button class="btn btn-success" onclick="saveData()" data-en="Save Data" data-ar="حفظ البيانات">Save Data</button>
+                <button class="btn btn-warning" onclick="loadData()" data-en="Load Data" data-ar="تحميل البيانات">Load Data</button>
+                <button class="btn btn-secondary" onclick="printReport()" data-en="Print Report" data-ar="طباعة التقرير">Print Report</button>
+                <button class="btn btn-info" onclick="exportPDF()" data-en="Export PDF" data-ar="تصدير PDF">Export PDF</button>
+                <button class="btn btn-danger" onclick="resetForm()" data-en="Reset Form" data-ar="إعادة تعيين النموذج">Reset Form</button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="results-section">
+                <!-- KPI Cards -->
+                <div class="grid-4" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin: 20px 0;">
+                    <div class="kpi-card">
+                        <div class="kpi-label" data-en="Characteristic Size (x₀)" data-ar="الحجم المميز (x₀)">Characteristic Size (x₀)</div>
+                        <div class="kpi-value" id="kpi-x0">-</div>
+                        <div class="kpi-label">μm</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label" data-en="Uniformity Index (n)" data-ar="مؤشر التجانس (n)">Uniformity Index (n)</div>
+                        <div class="kpi-value" id="kpi-n">-</div>
+                        <div class="kpi-label">-</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">D50</div>
+                        <div class="kpi-value" id="kpi-d50">-</div>
+                        <div class="kpi-label">μm</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">D90</div>
+                        <div class="kpi-value" id="kpi-d90">-</div>
+                        <div class="kpi-label">μm</div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card">
+                    <h3 class="section-title" data-en="Rosin-Rammler Distribution Curve" data-ar="منحنى توزيع روزين-راميلر">Rosin-Rammler Distribution Curve</h3>
+                    <div class="chart-container">
+                        <canvas id="rr-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Distribution Statistics -->
+                <div class="card">
+                    <h3 class="section-title" data-en="Distribution Statistics" data-ar="إحصائيات التوزيع">Distribution Statistics</h3>
+                    <div class="table-responsive">
+                        <table id="stats-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-en="Parameter" data-ar="المعامل">Parameter</th>
+                                    <th data-en="Value" data-ar="القيمة">Value</th>
+                                    <th data-en="Unit" data-ar="الوحدة">Unit</th>
+                                    <th data-en="Status" data-ar="الحالة">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Results will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Rosin-Rammler Parameters -->
+                <div class="card">
+                    <h3 class="section-title" data-en="Rosin-Rammler Parameters" data-ar="معايير روزين-راميلر">Rosin-Rammler Parameters</h3>
+                    <div class="table-responsive">
+                        <table id="rr-params-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-en="Parameter" data-ar="المعامل">Parameter</th>
+                                    <th data-en="Calculated" data-ar="المُحسب">Calculated</th>
+                                    <th data-en="Target" data-ar="المستهدف">Target</th>
+                                    <th data-en="Deviation" data-ar="الانحراف">Deviation</th>
+                                    <th data-en="Status" data-ar="الحالة">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Results will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="recommendations">
+                    <h3 data-en="Recommendations" data-ar="التوصيات">Recommendations</h3>
+                    <div id="recommendations-content">
+                        <!-- Recommendations will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- AI Analysis -->
+                <div class="ai-analysis">
+                    <h3 data-en="AI Analysis" data-ar="التحليل الذكي">AI Analysis</h3>
+                    <div id="ai-analysis-content">
+                        <!-- AI analysis will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="developer-info">
+                <h3 data-en="Developer Information" data-ar="معلومات المطور">Developer Information</h3>
+                <p><strong data-en="Name:" data-ar="الاسم:">Name:</strong> <span data-en="Mr. Fadi M. Darwesh" data-ar="السيد فادي م. درويش">Mr. Fadi M. Darwesh</span></p>
+                <p><strong data-en="Position:" data-ar="المنصب:">Position:</strong> <span data-en="QC & R&D Specialist" data-ar="أخصائي ضمان الجودة والبحوث والتطوير">QC & R&D Specialist</span></p>
+                <p><strong data-en="Email:" data-ar="البريد الإلكتروني:">Email:</strong> asrar.cement@gmail.com</p>
+                <p><strong data-en="Specialization:" data-ar="التخصص:">Specialization:</strong> <span data-en="Cement Quality Control, Process Optimization, and R&D" data-ar="ضمان جودة الأسمنت، تحسين العمليات، والبحوث والتطوير">Cement Quality Control, Process Optimization, and R&D</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="./common.js"></script>
+    <script>
+        let rrChart = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupLanguageSwitcher();
+            
+            // Hide splash screen after 2 seconds
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 2000);
+
+            // Set current date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('report-date').value = today;
+        });
+
+        function calculateRosinRammler() {
+            // Get input values
+            const x0 = parseFloat(document.getElementById('characteristic-size').value);
+            const n = parseFloat(document.getElementById('uniformity-index').value);
+            const sampleWeight = parseFloat(document.getElementById('sample-weight').value);
+            const density = parseFloat(document.getElementById('density').value);
+            const shapeFactor = parseFloat(document.getElementById('shape-factor').value);
+            const sieveData = document.getElementById('sieve-data').value;
+
+            if (!x0 || !n || !sieveData) {
+                alert(getText('Please fill in all required fields', 'يرجى ملء جميع الحقول المطلوبة'));
+                return;
+            }
+
+            try {
+                // Parse sieve data
+                const sieves = parseSieveData(sieveData);
+                
+                // Calculate D50 and D90
+                const d50 = calculateDPercentile(x0, n, 50);
+                const d90 = calculateDPercentile(x0, n, 90);
+
+                // Update KPI cards
+                document.getElementById('kpi-x0').textContent = x0.toFixed(2);
+                document.getElementById('kpi-n').textContent = n.toFixed(2);
+                document.getElementById('kpi-d50').textContent = d50.toFixed(2);
+                document.getElementById('kpi-d90').textContent = d90.toFixed(2);
+
+                // Create distribution curve data
+                const curveData = generateRosinRammlerCurve(x0, n);
+                
+                // Update chart
+                updateRosinRammlerChart(curveData);
+
+                // Update tables
+                updateDistributionStats(x0, n, d50, d90);
+                updateRosinRammlerParams(x0, n);
+
+                // Show results
+                document.getElementById('results-section').style.display = 'block';
+                document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+
+                // Generate recommendations
+                generateRecommendations(x0, n, d50, d90);
+
+                // Generate AI analysis
+                generateAIAnalysis(x0, n, d50, d90, sieves);
+
+            } catch (error) {
+                alert(getText('Error in calculation: ', 'خطأ في الحساب: ') + error.message);
+            }
+        }
+
+        function parseSieveData(data) {
+            const sieves = [];
+            const lines = data.split(';');
+            
+            lines.forEach(line => {
+                const parts = line.split(',').map(p => p.trim());
+                if (parts.length === 2) {
+                    const opening = parts[0].toLowerCase() === 'bottom' ? 0 : parseFloat(parts[0]);
+                    const weight = parseFloat(parts[1]);
+                    if (!isNaN(opening) && !isNaN(weight)) {
+                        sieves.push({ opening, weight });
+                    }
+                }
+            });
+            
+            return sieves.sort((a, b) => b.opening - a.opening);
+        }
+
+        function calculateDPercentile(x0, n, percentile) {
+            // D(p) = x0 * [-ln(1-p/100)]^(1/n)
+            const lnTerm = -Math.log(1 - percentile / 100);
+            return x0 * Math.pow(lnTerm, 1 / n);
+        }
+
+        function generateRosinRammlerCurve(x0, n) {
+            const data = [];
+            const step = x0 / 50;
+            
+            for (let x = step; x <= x0 * 3; x += step) {
+                const F = 100 * (1 - Math.exp(-Math.pow(x / x0, n)));
+                data.push({ x, F });
+            }
+            
+            return data;
+        }
+
+        function updateRosinRammlerChart(data) {
+            const ctx = document.getElementById('rr-chart').getContext('2d');
+            
+            if (rrChart) {
+                rrChart.destroy();
+            }
+
+            rrChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.x.toFixed(1)),
+                    datasets: [{
+                        label: getText('Cumulative % Passing', 'النسبة المئوية التراكمية المارة'),
+                        data: data.map(d => d.F),
+                        borderColor: 'rgb(52, 152, 219)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: getText('Rosin-Rammler Distribution Curve', 'منحنى توزيع روزين-راميلر')
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: getText('Particle Size (μm)', 'حجم الجسيم (ميكرو متر)')
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: getText('Cumulative % Passing', 'النسبة المئوية التراكمية المارة')
+                            },
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDistributionStats(x0, n, d50, d90) {
+            const tbody = document.querySelector('#stats-table tbody');
+            tbody.innerHTML = '';
+
+            const stats = [
+                { param: 'Characteristic Size (x₀)', paramAr: 'الحجم المميز (x₀)', value: x0.toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'Uniformity Index (n)', paramAr: 'مؤشر التجانس (n)', value: n.toFixed(2), unit: '-', status: 'normal' },
+                { param: 'D10', paramAr: 'D10', value: calculateDPercentile(x0, n, 10).toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'D25', paramAr: 'D25', value: calculateDPercentile(x0, n, 25).toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'D50', paramAr: 'D50', value: d50.toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'D75', paramAr: 'D75', value: calculateDPercentile(x0, n, 75).toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'D90', paramAr: 'D90', value: d90.toFixed(2), unit: 'μm', status: 'normal' },
+                { param: 'D95', paramAr: 'D95', value: calculateDPercentile(x0, n, 95).toFixed(2), unit: 'μm', status: 'normal' }
+            ];
+
+            stats.forEach(stat => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${currentLang === 'ar' ? stat.paramAr : stat.param}</td>
+                    <td>${stat.value}</td>
+                    <td>${stat.unit}</td>
+                    <td><span class="${stat.status}">${getText('Normal', 'طبيعي')}</span></td>
+                `;
+            });
+        }
+
+        function updateRosinRammlerParams(x0, n) {
+            const targetX0 = parseFloat(document.getElementById('target-x0').value);
+            const targetN = parseFloat(document.getElementById('target-n').value);
+            
+            const tbody = document.querySelector('#rr-params-table tbody');
+            tbody.innerHTML = '';
+
+            const params = [
+                { 
+                    param: 'Characteristic Size (x₀)', 
+                    paramAr: 'الحجم المميز (x₀)', 
+                    calculated: x0.toFixed(2), 
+                    target: targetX0.toFixed(2),
+                    unit: 'μm'
+                },
+                { 
+                    param: 'Uniformity Index (n)', 
+                    paramAr: 'مؤشر التجانس (n)', 
+                    calculated: n.toFixed(2), 
+                    target: targetN.toFixed(2),
+                    unit: '-'
+                }
+            ];
+
+            params.forEach(param => {
+                const deviation = Math.abs(parseFloat(param.calculated) - parseFloat(param.target));
+                const deviationPercent = (deviation / parseFloat(param.target) * 100).toFixed(1);
+                const status = deviationPercent <= 5 ? 'good' : deviationPercent <= 10 ? 'fair' : 'poor';
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${currentLang === 'ar' ? param.paramAr : param.param}</td>
+                    <td>${param.calculated} ${param.unit}</td>
+                    <td>${param.target} ${param.unit}</td>
+                    <td>${deviationPercent}%</td>
+                    <td><span class="${status}">${getStatusText(status)}</span></td>
+                `;
+            });
+        }
+
+        function generateRecommendations(x0, n, d50, d90) {
+            const recommendations = [];
+            
+            if (n < 1.0) {
+                recommendations.push(getText(
+                    'Low uniformity index indicates wide particle size distribution. Consider adjusting grinding conditions.',
+                    'مؤشر التجانس المنخفض يشير إلى توزيع واسع لأحجام الجسيمات. فكر في تعديل ظروف الطحن.'
+                ));
+            } else if (n > 1.5) {
+                recommendations.push(getText(
+                    'High uniformity index indicates narrow particle size distribution. This may be suitable for high-strength applications.',
+                    'مؤشر التجانس العالي يشير إلى توزيع ضيق لأحجام الجسيمات. قد يكون هذا مناسباً لتطبيقات المقاومة العالية.'
+                ));
+            }
+
+            if (d50 > 50) {
+                recommendations.push(getText(
+                    'D50 is relatively large. Consider increasing grinding time or optimizing mill parameters.',
+                    'D50 كبير نسبياً. فكر في زيادة وقت الطحن أو تحسين معاملات الطاحونة.'
+                ));
+            } else if (d50 < 20) {
+                recommendations.push(getText(
+                    'D50 is relatively small. Monitor for potential over-grinding which may affect workability.',
+                    'D50 صغير نسبياً. راقب الطحن المفرط الذي قد يؤثر على قابلية التشغيل.'
+                ));
+            }
+
+            const content = document.getElementById('recommendations-content');
+            content.innerHTML = recommendations.length > 0 
+                ? '<ul>' + recommendations.map(r => `<li>${r}</li>`).join('') + '</ul>'
+                : '<p>' + getText('Distribution parameters are within acceptable ranges.', 'معايير التوزيع ضمن النطاقات المقبولة.') + '</p>';
+        }
+
+        function generateAIAnalysis(x0, n, d50, d90, sieves) {
+            const analysis = [];
+            
+            // Statistical analysis
+            const fineness = 100 - (sieves.length > 0 ? sieves[sieves.length - 1].weight : 0);
+            
+            analysis.push(getText(
+                `Statistical Analysis: Fineness index is ${fineness.toFixed(1)}% based on sieve analysis.`,
+                `التحليل الإحصائي: مؤشر النعومة ${fineness.toFixed(1)}% بناءً على تحليل المناخل.`
+            ));
+
+            analysis.push(getText(
+                `Rosin-Rammler Analysis: x₀ = ${x0.toFixed(2)} μm, n = ${n.toFixed(2)}, indicating ${n < 1.2 ? 'wide' : 'narrow'} size distribution.`,
+                `تحليل روزين-راميلر: x₀ = ${x0.toFixed(2)} ميكرومتر، n = ${n.toFixed(2)}، يشير إلى توزيع ${n < 1.2 ? 'واسع' : 'ضيق'} للحجم.`
+            ));
+
+            analysis.push(getText(
+                `Particle Characteristics: D50 = ${d50.toFixed(2)} μm, D90 = ${d90.toFixed(2)} μm, suggesting ${d50 < 30 ? 'fine' : 'coarse'} grinding.`,
+                `خصائص الجسيمات: D50 = ${d50.toFixed(2)} ميكرومتر، D90 = ${d90.toFixed(2)} ميكرومتر، يشير إلى طحن ${d50 < 30 ? 'ناعم' : 'خشن}.`
+            ));
+
+            const content = document.getElementById('ai-analysis-content');
+            content.innerHTML = '<ul>' + analysis.map(a => `<li>${a}</li>`).join('') + '</ul>';
+        }
+
+        function getStatusText(status) {
+            if (currentLang === 'ar') {
+                return { good: 'جيد', fair: 'مقبول', poor: 'ضعيف' }[status];
+            } else {
+                return { good: 'Good', fair: 'Fair', poor: 'Poor' }[status];
+            }
+        }
+
+        function resetForm() {
+            if (confirm(getText('Are you sure you want to reset the form?', 'هل أنت متأكد من رغبتك في إعادة تعيين النموذج؟'))) {
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    if (el.type !== 'date') {
+                        el.value = '';
+                    }
+                });
+                document.getElementById('results-section').style.display = 'none';
+                if (rrChart) {
+                    rrChart.destroy();
+                    rrChart = null;
+                }
+            }
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        function exportPDF() {
+            // Generate PDF using browser's print function
+            alert(getText('PDF export will be available in the full version.', 'تصدير PDF سيكون متاحاً في النسخة الكاملة.'));
+        }
+
+        function saveData() {
+            const data = {
+                companyName: document.getElementById('company-name').value,
+                reportDate: document.getElementById('report-date').value,
+                reportPreparer: document.getElementById('report-preparer').value,
+                reportPosition: document.getElementById('report-position').value,
+                productType: document.getElementById('product-type').value,
+                batchNumber: document.getElementById('batch-number').value,
+                characteristicSize: document.getElementById('characteristic-size').value,
+                uniformityIndex: document.getElementById('uniformity-index').value,
+                sampleWeight: document.getElementById('sample-weight').value,
+                numSieves: document.getElementById('num-sieves').value,
+                density: document.getElementById('density').value,
+                shapeFactor: document.getElementById('shape-factor').value,
+                targetX0: document.getElementById('target-x0').value,
+                targetN: document.getElementById('target-n').value,
+                accuracyThreshold: document.getElementById('accuracy-threshold').value,
+                sieveData: document.getElementById('sieve-data').value
+            };
+            
+            localStorage.setItem('rosinRammlerData', JSON.stringify(data));
+            alert(getText('Data saved successfully!', 'تم حفظ البيانات بنجاح!'));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('rosinRammlerData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    const element = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase());
+                    if (element) {
+                        element.value = data[key];
+                    }
+                });
+                alert(getText('Data loaded successfully!', 'تم تحميل البيانات بنجاح!'));
+            } else {
+                alert(getText('No saved data found.', 'لم يتم العثور على بيانات محفوظة.'));
+            }
+        }
+    </script>
+</body>
+</html>

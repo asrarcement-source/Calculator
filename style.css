@@ -1,0 +1,1566 @@
+/* ====================================================== */
+/* ==    CEMENT CALCULATOR SHARED STYLESHEET        == */
+/* ==    Version: 1.0                                == */
+/* ==    Author: Mr. Fadi M. Darwesh                 == */
+/* ====================================================== */
+
+/* ====================================================== */
+/* ==           CSS VARIABLES (THEME)                == */
+/* ====================================================== */
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+    --accent: #e74c3c;
+    --light: #ecf0f1;
+    --dark: #2c3e50;
+    --success: #2ecc71;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    
+    /* Extended color variables for new components */
+    --primary-color: var(--primary);
+    --secondary-color: var(--secondary);
+    --text-secondary: #666;
+    --border-color: #ddd;
+    --success-color: var(--success);
+    --warning-color: var(--warning);
+    --danger-color: var(--danger);
+    --gradient-primary: linear-gradient(135deg, var(--primary), var(--secondary));
+    --gray-700: #555;
+}
+
+/* ====================================================== */
+/* ==              RESET & BASE STYLES               == */
+/* ====================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+    overflow: visible;
+    min-height: 100vh;
+    scroll-behavior: smooth;
+}
+
+/* Hide scrollbar during splash only */
+body.splash-active {
+    overflow: hidden;
+}
+
+/* Scroll improvements */
+html {
+    scroll-behavior: smooth;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ====================================================== */
+/* ==            LOADING OVERLAY STYLES             == */
+/* ====================================================== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(4px);
+    visibility: visible;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    text-align: center;
+    color: white;
+    font-size: 20px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.loading-spinner .fa-cog {
+    font-size: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+    color: #4FC3F7;
+    filter: drop-shadow(0 0 10px rgba(79, 195, 247, 0.5));
+}
+
+.loading-spinner p {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ====================================================== */
+/* ==          🔥 SPLASH SCREEN STYLES 🔥           == */
+/* ====================================================== */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 1s ease-out;
+}
+
+#splash-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#splash-screen h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#splash-screen p {
+    font-size: 18px;
+    font-style: italic;
+}
+
+#splash-screen .loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-top: 30px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ====================================================== */
+/* ==            HEADER & NAVIGATION STYLES         == */
+/* ====================================================== */
+header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 20px 0;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.language-switcher {
+    display: flex;
+    gap: 10px;
+}
+
+.lang-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.lang-btn.active {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.main-title {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 28px;
+}
+
+/* ====================================================== */
+/* ==               CARD & SECTION STYLES           == */
+/* ====================================================== */
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.card-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: var(--primary);
+    border-bottom: 2px solid var(--light);
+    padding-bottom: 10px;
+}
+
+/* ====================================================== */
+/* ==              FORM & INPUT STYLES              == */
+/* ====================================================== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--secondary);
+    outline: none;
+}
+
+/* ====================================================== */
+/* ==               GRID LAYOUTS                     == */
+/* ====================================================== */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+/* ====================================================== */
+/* ==              BUTTON STYLES                    == */
+/* ====================================================== */
+.btn {
+    display: inline-block;
+    background: var(--secondary);
+    color: white;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.3s;
+    text-align: center;
+    margin: 8px;
+    min-width: 140px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background: var(--primary);
+}
+
+.btn-primary:hover {
+    background: #1a252f;
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.btn-success:hover {
+    background: #27ae60;
+}
+
+.btn-danger {
+    background: var(--danger);
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-warning {
+    background: var(--warning);
+}
+
+.btn-warning:hover {
+    background: #e67e22;
+}
+
+.btn-lg {
+    padding: 18px 36px;
+    font-size: 18px;
+    font-weight: 700;
+    min-width: 200px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-lg:hover {
+    background: linear-gradient(135deg, #1a252f, #2980b9);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.btn-lg:active {
+    transform: translateY(-1px);
+}
+
+/* ====================================================== */
+/* ==              AI SECTION STYLES                == */
+/* ====================================================== */
+.ai-section {
+    background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+    border: 2px solid rgba(52, 152, 219, 0.2);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-section::before {
+    content: '🤖';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    opacity: 0.1;
+}
+
+.ai-section h2::before {
+    content: '🤖 ';
+}
+
+.ai-section .optional-note {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+    border-left: 4px solid var(--warning);
+}
+
+.api-key-input {
+    position: relative;
+}
+
+.api-key-input::before {
+    content: '🔑';
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.api-key-input input {
+    padding-left: 45px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+    flex-wrap: wrap;
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    justify-content: center;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+    flex-wrap: wrap;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    justify-content: center;
+    border: 1px solid #e9ecef;
+}
+
+/* ====================================================== */
+/* ==              KPI CARDS STYLES                 == */
+/* ====================================================== */
+.kpi-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.kpi-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.kpi-label {
+    font-size: 16px;
+    color: #666;
+}
+
+.kpi-desc {
+    font-size: 12px;
+    color: #555;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.good { color: var(--success); }
+.fair { color: var(--warning); }
+.poor { color: var(--danger); }
+
+/* ====================================================== */
+/* ==            CHART CONTAINER STYLES            == */
+/* ====================================================== */
+.chart-container {
+    height: 400px;
+    margin: 20px 0;
+}
+
+/* ====================================================== */
+/* ==               TABLE STYLES                    == */
+/* ====================================================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+th, td {
+    padding: 16px 20px;
+    text-align: left;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+th {
+    background: linear-gradient(135deg, var(--light), #f8f9fa);
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.001);
+    transition: all 0.2s ease;
+}
+
+tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+tr:nth-child(even):hover {
+    background-color: #f0f2f5;
+}
+
+.target-table input {
+    padding: 8px;
+    font-size: 14px;
+}
+
+#psd-table input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+#psd-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    border: 1px solid #ddd;
+}
+
+.remove-row {
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    padding: 8px 16px;
+    font-size: 14px;
+    margin: 2px;
+    font-weight: 600;
+}
+
+.remove-row:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+}
+
+/* ====================================================== */
+/* ==             UTILITY & STATUS STYLES          == */
+/* ====================================================== */
+.results-section {
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
+
+.recommendations {
+    background: #fff9e6;
+    border-left: 5px solid var(--warning);
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.ai-analysis {
+    background: #f0f8ff;
+    border-left: 5px solid var(--secondary);
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.additional-notes-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+    border-left: 4px solid var(--warning);
+}
+
+.footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    color: #666;
+    border-top: 1px solid #ddd;
+}
+
+/* ====================================================== */
+/* ==               API STATUS STYLES              == */
+/* ====================================================== */
+.api-status {
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: bold;
+}
+
+.api-status.connected {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.api-status.disconnected {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ====================================================== */
+/* ==            PRINT STYLES (HEADER/FOOTER)       == */
+/* ====================================================== */
+
+/* These are hidden by default */
+#print-header, #print-footer {
+    display: none;
+}
+
+/* Cover page hidden by default */
+.print-cover {
+    display: none;
+    text-align: center;
+    margin-top: 2in;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0.75in; /* Standard margins */
+    }
+
+    body {
+        padding-top: 80px; /* Space for fixed header */
+        padding-bottom: 40px; /* Space for fixed footer */
+        font-size: 12pt; /* Increase base font size for readability */
+    }
+
+    h1, h2, h3, h4, h5 {
+        font-size: inherit;
+    }
+
+    .card-title {
+        font-size: 14pt;
+        margin-bottom: 8px;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid; /* Don't break cards */
+    }
+    
+    .btn-group, .language-switcher {
+        display: none;
+    }
+
+    #psd-table, .kpi-card, .chart-container, 
+    .ai-analysis, .recommendations, .report-header,
+    #detailed-calculations, .additional-notes-section {
+        page-break-inside: avoid; /* Don't break key elements */
+    }
+
+    #psd-table tr {
+        page-break-inside: avoid; /* Don't break table rows */
+    }
+
+    /* Show cover page on print */
+    .print-cover {
+        display: block;
+        page-break-after: always;
+        text-align: center;
+    }
+
+    /* Print-friendly metric descriptions */
+    .kpi-desc {
+        font-size: 10pt;
+        color: #444;
+    }
+
+    .kpi-label {
+        font-size: 12pt;
+        font-weight: 600;
+    }
+    .kpi-value {
+        font-size: 18pt;
+        font-weight: bold;
+    }
+
+    /* Fixed Header for Print */
+    #print-header {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        padding: 10px 0.75in;
+        border-bottom: 2px solid var(--primary);
+        background: white;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10pt;
+    }
+    #print-header-info {
+        text-align: left;
+    }
+    #print-header-logo {
+        text-align: right;
+        font-weight: bold;
+        color: var(--primary);
+    }
+    #print-header-logo h4 {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Fixed Footer for Print (Copyright) */
+    #print-footer {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        padding: 0 0.75in;
+        border-top: 1px solid #ddd;
+        background: white;
+        z-index: 100;
+        text-align: center;
+        font-size: 9pt;
+        color: #666;
+        line-height: 30px;
+    }
+}
+
+/* ====================================================== */
+/* ==             RESPONSIVE DESIGN                 == */
+/* ====================================================== */
+
+/* ====================================================== */
+/* ==         الهاتف المحمول: شاشات صغيرة جداً        == */
+/* ==              (max-width: 480px)                  == */
+/* ====================================================== */
+@media (max-width: 480px) {
+    /* Container adjustments */
+    .container {
+        padding: 12px;
+        margin: 0 8px;
+    }
+
+    /* Header adjustments */
+    header {
+        padding: 15px 0;
+        border-radius: 0;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 10px;
+    }
+
+    .logo {
+        font-size: 20px;
+        text-align: center;
+    }
+
+    .main-title {
+        font-size: 22px;
+        margin: 15px 0;
+    }
+
+    /* Language switcher */
+    .language-switcher {
+        gap: 8px;
+    }
+
+    .lang-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    /* Card adjustments */
+    .card {
+        padding: 18px;
+        margin-bottom: 18px;
+        border-radius: 8px;
+    }
+
+    .card-title {
+        font-size: 18px;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+    }
+
+    /* Form adjustments */
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    label {
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+        padding: 14px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 6px;
+    }
+
+    /* Button adjustments */
+    .btn {
+        padding: 18px 24px;
+        font-size: 16px;
+        margin: 10px 6px;
+        min-width: 160px;
+        border-radius: 8px;
+        display: block;
+        width: calc(100% - 12px);
+        margin-left: 6px;
+        margin-right: 6px;
+    }
+
+    .btn-lg {
+        padding: 20px 28px;
+        font-size: 18px;
+        min-width: 200px;
+    }
+
+    /* Grid layouts - single column */
+    .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* AI Section */
+    .ai-section {
+        padding: 18px;
+        margin: 15px 0;
+        border-radius: 8px;
+    }
+
+    .ai-section h2 {
+        font-size: 18px;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        padding: 16px;
+        margin-bottom: 15px;
+    }
+
+    .kpi-value {
+        font-size: 28px;
+    }
+
+    .kpi-label {
+        font-size: 14px;
+    }
+
+    .kpi-desc {
+        font-size: 11px;
+    }
+
+    /* Tables - make more mobile friendly */
+    table {
+        font-size: 14px;
+        border-radius: 6px;
+    }
+
+    th, td {
+        padding: 12px 10px;
+    }
+
+    th {
+        font-size: 12px;
+    }
+
+    /* Chart container */
+    .chart-container {
+        height: 300px;
+        margin: 15px 0;
+    }
+
+    /* Button groups */
+    .btn-group, .button-group {
+        gap: 10px;
+        padding: 12px 15px;
+        margin: 15px 0;
+    }
+
+    /* Remove row button */
+    .remove-row {
+        padding: 10px 14px;
+        font-size: 13px;
+        margin: 4px;
+        border-radius: 4px;
+    }
+
+    /* Footer */
+    .footer {
+        margin-top: 30px;
+        padding: 15px;
+        font-size: 14px;
+    }
+
+    /* Loading overlay adjustments */
+    .loading-spinner {
+        padding: 30px 20px;
+        margin: 20px;
+        border-radius: 12px;
+    }
+
+    .loading-spinner p {
+        font-size: 16px;
+    }
+
+    /* Splash screen adjustments */
+    #splash-screen h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    #splash-screen p {
+        font-size: 16px;
+    }
+
+    /* Recommendations and analysis sections */
+    .recommendations, .ai-analysis, .additional-notes-section {
+        padding: 12px;
+        margin: 15px 0;
+        border-radius: 6px;
+    }
+
+    /* Target table inputs */
+    .target-table input {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* API key input */
+    .api-key-input::before {
+        left: 12px;
+    }
+
+    .api-key-input input {
+        padding-left: 40px;
+    }
+
+    /* Flexbox adjustments for better mobile layout */
+    .flex-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* Hide non-essential elements on very small screens */
+    .optional-note {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+}
+
+/* ====================================================== */
+/* ==         الشاشات المتوسطة (481px - 768px)         == */
+/* ====================================================== */
+@media (min-width: 481px) and (max-width: 768px) {
+    /* Container adjustments */
+    .container {
+        padding: 16px;
+        margin: 0 12px;
+    }
+
+    /* Header adjustments */
+    header {
+        padding: 18px 0;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 15px;
+        padding: 0 15px;
+    }
+
+    .main-title {
+        font-size: 25px;
+        margin: 18px 0;
+    }
+
+    /* Card adjustments */
+    .card {
+        padding: 22px;
+        margin-bottom: 22px;
+    }
+
+    .card-title {
+        font-size: 19px;
+        margin-bottom: 18px;
+    }
+
+    /* Grid layouts - single column but with better spacing */
+    .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    /* Button adjustments */
+    .btn {
+        padding: 16px 28px;
+        font-size: 16px;
+        margin: 8px;
+        min-width: 150px;
+        display: inline-block;
+        width: auto;
+    }
+
+    .btn-lg {
+        padding: 18px 32px;
+        font-size: 17px;
+    }
+
+    /* Table adjustments */
+    table {
+        font-size: 15px;
+    }
+
+    th, td {
+        padding: 14px 12px;
+    }
+
+    /* Chart container */
+    .chart-container {
+        height: 350px;
+    }
+
+    /* Button groups */
+    .btn-group, .button-group {
+        gap: 12px;
+        padding: 14px 18px;
+        margin: 20px 0;
+    }
+
+    /* Form improvements */
+    input, select, textarea {
+        padding: 13px;
+        font-size: 16px;
+    }
+
+    /* Flexbox adjustments */
+    .flex-container {
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .kpi-value {
+        font-size: 30px;
+    }
+
+    .kpi-label {
+        font-size: 15px;
+    }
+
+    .kpi-desc {
+        font-size: 12px;
+    }
+
+    /* Recommendations sections */
+    .recommendations, .ai-analysis, .additional-notes-section {
+        padding: 14px;
+        margin: 18px 0;
+    }
+}
+
+/* ====================================================== */
+/* ==         الأجهزة اللوحية (769px - 1024px)        == */
+/* ====================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Container adjustments */
+    .container {
+        max-width: 1000px;
+        padding: 24px;
+    }
+
+    /* Header adjustments */
+    header {
+        padding: 22px 0;
+    }
+
+    .header-content {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 0 24px;
+    }
+
+    .main-title {
+        font-size: 26px;
+        margin: 18px 0;
+    }
+
+    /* Grid layouts - 2 columns for better tablet view */
+    .grid-2 {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    /* Card adjustments */
+    .card {
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .card-title {
+        font-size: 20px;
+        margin-bottom: 18px;
+    }
+
+    /* Button adjustments */
+    .btn {
+        padding: 15px 30px;
+        font-size: 15px;
+        min-width: 130px;
+    }
+
+    .btn-lg {
+        padding: 17px 34px;
+        font-size: 17px;
+    }
+
+    /* Table adjustments */
+    table {
+        font-size: 15px;
+    }
+
+    th, td {
+        padding: 15px 16px;
+    }
+
+    /* Chart container */
+    .chart-container {
+        height: 380px;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .kpi-value {
+        font-size: 31px;
+    }
+
+    .kpi-label {
+        font-size: 16px;
+    }
+
+    .kpi-desc {
+        font-size: 12px;
+    }
+
+    /* AI Section */
+    .ai-section {
+        padding: 22px;
+        margin: 20px 0;
+    }
+
+    /* Button groups */
+    .btn-group, .button-group {
+        gap: 14px;
+        padding: 16px 20px;
+        margin: 22px 0;
+        justify-content: center;
+    }
+
+    /* Form improvements */
+    input, select, textarea {
+        padding: 13px;
+        font-size: 15px;
+    }
+
+    /* Flexbox adjustments */
+    .flex-container {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    /* Recommendations sections */
+    .recommendations, .ai-analysis, .additional-notes-section {
+        padding: 16px;
+        margin: 20px 0;
+    }
+
+    /* Hide/show specific elements for tablet optimization */
+    .hide-on-tablet {
+        display: none;
+    }
+}
+
+/* ====================================================== */
+/* ==        الشاشات الكبيرة جداً (min-width: 1025px)   == */
+/* ====================================================== */
+@media (min-width: 1025px) {
+    /* Container adjustments - wider max width */
+    .container {
+        max-width: 1400px;
+        padding: 30px;
+    }
+
+    /* Header adjustments */
+    header {
+        padding: 25px 0;
+    }
+
+    .header-content {
+        padding: 0 30px;
+    }
+
+    .main-title {
+        font-size: 32px;
+        margin: 25px 0;
+    }
+
+    /* Grid layouts - full 3 columns */
+    .grid-2 {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 30px;
+    }
+
+    /* Card adjustments */
+    .card {
+        padding: 30px;
+        margin-bottom: 30px;
+        border-radius: 12px;
+    }
+
+    .card-title {
+        font-size: 22px;
+        margin-bottom: 22px;
+        padding-bottom: 12px;
+    }
+
+    /* Button adjustments */
+    .btn {
+        padding: 16px 32px;
+        font-size: 16px;
+        margin: 10px;
+        min-width: 140px;
+        border-radius: 10px;
+    }
+
+    .btn-lg {
+        padding: 18px 36px;
+        font-size: 18px;
+        min-width: 200px;
+        border-radius: 12px;
+    }
+
+    /* Table adjustments */
+    table {
+        font-size: 16px;
+    }
+
+    th, td {
+        padding: 18px 20px;
+    }
+
+    th {
+        font-size: 14px;
+    }
+
+    /* Chart container */
+    .chart-container {
+        height: 450px;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-value {
+        font-size: 36px;
+    }
+
+    .kpi-label {
+        font-size: 17px;
+    }
+
+    .kpi-desc {
+        font-size: 13px;
+    }
+
+    /* AI Section */
+    .ai-section {
+        padding: 28px;
+        margin: 25px 0;
+        border-radius: 14px;
+    }
+
+    .ai-section h2 {
+        font-size: 22px;
+    }
+
+    /* Button groups */
+    .btn-group, .button-group {
+        gap: 18px;
+        padding: 20px 25px;
+        margin: 30px 0;
+        justify-content: center;
+    }
+
+    /* Form improvements */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    label {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    input, select, textarea {
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 6px;
+    }
+
+    /* Flexbox adjustments */
+    .flex-container {
+        flex-direction: row;
+        gap: 24px;
+    }
+
+    /* Loading overlay */
+    .loading-spinner {
+        padding: 50px;
+        border-radius: 16px;
+    }
+
+    .loading-spinner p {
+        font-size: 20px;
+    }
+
+    /* Splash screen */
+    #splash-screen h1 {
+        font-size: 42px;
+    }
+
+    #splash-screen p {
+        font-size: 20px;
+    }
+
+    /* Recommendations sections */
+    .recommendations, .ai-analysis, .additional-notes-section {
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 8px;
+    }
+
+    /* Footer */
+    .footer {
+        margin-top: 50px;
+        padding: 25px;
+        font-size: 16px;
+    }
+
+    /* Hover effects for desktop */
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        transition: all 0.3s ease;
+    }
+}
+
+/* ====================================================== */
+/* ==        تحسينات إضافية للشاشات التفاعلية         == */
+/* ====================================================== */
+
+/* Orientation handling for tablets and phones */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        padding: 10px 16px;
+    }
+    
+    .header-content {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .main-title {
+        margin: 12px 0;
+        font-size: 20px;
+    }
+    
+    .card {
+        padding: 16px;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .btn-group, .button-group {
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+/* High DPI displays (Retina) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .btn, .card, .kpi-card {
+        border-width: 0.5px;
+    }
+    
+    .loading-spinner {
+        border-width: 1.5px;
+    }
+}
+
+/* Dark mode support for mobile devices */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+    body {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+    }
+    
+    .card, .kpi-card {
+        background-color: #2d2d2d;
+        border: 1px solid #404040;
+    }
+    
+    input, select, textarea {
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        border-color: #404040;
+    }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+}
+
+/* Print optimizations for mobile */
+@media print and (max-width: 768px) {
+    .container {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+        margin-bottom: 10px;
+    }
+    
+    .btn, .btn-group, .language-switcher {
+        display: none !important;
+    }
+    
+    body {
+        padding-top: 0;
+        font-size: 11pt;
+    }
+}
